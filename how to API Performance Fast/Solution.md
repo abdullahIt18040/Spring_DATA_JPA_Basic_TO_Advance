@@ -113,6 +113,101 @@ Spring Boot by default HikariCP ব্যবহার করে (খুবই �
 spring.datasource.hikari.maximum-pool-size=20
 spring.datasource.hikari.minimum-idle=5
 
+Connection Pooling কী?
+
+যখন Spring Boot অ্যাপ্লিকেশন ডাটাবেসে query করে, তখন প্রতিবার যদি নতুন database connection ওপেন করতে হয় —
+➡️ এতে সময় লাগে
+➡️ অ্যাপ স্লো হয়ে যায়
+➡️ অনেক লোডে ডাটাবেস ডাউনও হতে পারে
+
+Connection Pooling হলো আগে থেকেই কিছু DB connection তৈরি করে রাখা, যাতে যখন দরকার হবে তখন অ্যাপ্লিকেশন সরাসরি সেই ready-made connection ব্যবহার করতে পারে।
+
+এতে
+✔ দ্রুত response পাওয়া যায়
+✔ latency কমে
+✔ DB load ব্যালান্স থাকে
+✔ high traffic এও অ্যাপ ভালো perform করে
+
+✅ Spring Boot default connection pool: HikariCP
+
+Spring Boot এ default connection pool হলো HikariCP, যা বর্তমানে Java ecosystem-এ সবচেয়ে দ্রুত ও lightweight।
+
+HikariCP এর প্রধান বৈশিষ্ট্য
+✔ ultra-fast
+✔ low latency
+✔ কম RAM ব্যবহার করে
+✔ high-concurrency environment এ stable
+
+⭐ কেন HikariCP এত দ্রুত?
+
+১) Optimized connection handling
+২) Full JDBC spec ব্যবহার করে low overhead
+৩) Core structure খুব ছোট
+৪) Lock-free techniques ব্যবহার করে (কম wait)
+
+⚙️ Pool Size কেন ঠিক করতে হয়?
+
+If your application handles many concurrent requests, then:
+
+বেশি thread → বেশি DB query → বেশি connection দরকার
+
+কম pool size হলে thread গুলো connection পেতে wait করবে
+
+এতে API slow হয়ে যাবে বা timeout হবে
+
+🔧 Recommended Config (Your Example Explained)
+✔ Maximum Pool Size
+spring.datasource.hikari.maximum-pool-size=20
+
+
+মানে pool-এ সর্বোচ্চ ২০টি connection তৈরি হতে পারবে।
+
+➡️ High traffic এ এটা খুব গুরুত্বপূর্ণ।
+➡️ আপনার সার্ভারের CPU / DB capacity অনুযায়ী সেট করতে হয়।
+
+✔ Minimum Idle
+spring.datasource.hikari.minimum-idle=5
+
+
+মানে pool এ কমপক্ষে ৫টি idle (ready) connection সবসময় থাকবে।
+
+➡️ নতুন request এ connection open করার delay কমে
+➡️ sudden traffic spike handle করতে পারে
+
+🔍 কখন কোন Pool Size ব্যবহার করবে?
+Scenario	Maximum Pool Size
+Small project, few users	5–10
+Medium load (REST API)	15–25
+High load, microservices	30–50
+Very high traffic	DB capacity দেখে টিউন করতে হবে
+Important:
+
+Pool size বেশি দিলে performance ভাল হবে না
+➡️ বরং DB over-load হতে পারে
+➡️ সবসময় balanced number ব্যবহার করতে হবে
+
+🎯 HikariCP Important Tips
+
+✔ Long-running query রাখবে না
+✔ Connection leak detection enable করা ভালো
+
+spring.datasource.hikari.leak-detection-threshold=2000
+
+
+✔ Timeout too high রাখবে না
+
+spring.datasource.hikari.connection-timeout=30000
+
+✅ Short Summary
+
+Connection pooling = ready-made DB connections
+
+Spring Boot default = HikariCP (fastest)
+
+Pool size ঠিক না করলে API slow হয়ে যায়
+
+Common setup → 20 max, 5 idle (your configuration is good)
+
 🧩 9️⃣ Caching at Service Layer
 
 যদি একই user এর data বারবার আসে, Spring Cache ব্যবহার করো:
