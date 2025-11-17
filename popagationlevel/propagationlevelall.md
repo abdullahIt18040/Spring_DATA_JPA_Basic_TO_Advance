@@ -113,3 +113,81 @@ REQUIRES_NEW = আলাদা transaction, outer এর সাথে কোন�
 
 NESTED = একই transaction, শুধু savepoint দিয়ে inner handle করা হয়
 ```
+## Physical Connection vs Logical Transaction
+
+✔ Physical connection কী?
+
+ডাটাবেসের সাথে আসল network-level connection
+
+Limited (৫,১০,২০ … যত pool size দেওয়া আছে)
+
+খুব heavy এবং create/close করতে সময় লাগে
+
+✔ Logical transaction কী?
+
+Spring-এর transaction boundary
+(@Transactional শুরু → commit/rollback → end)
+
+এটা connection নয়, বরং DB operations এর scope
+
+👉 ১টি physical connection-এর উপর অনেক transaction চলতে পারে।
+
+🔥 2️⃣ Connection Pool (HikariCP) কীভাবে কাজ করে?
+
+Spring Boot default-ভাবে HikariCP connection pool ব্যবহার করে।
+Pool করে:
+
+Application start → কিছু physical DB connection তৈরি করে
+
+যখন transaction শুরু হয় → pool থেকে ১টি connection নেওয়া হয়
+
+Transaction শেষ → সেই connection pool-এ ফেরত যায়
+
+নতুন transaction আবার সেই connection reuse করে
+
+👉 So, every transaction does NOT create a new physical DB connection.
+It reuses connections from pool.
+
+🔥 3️⃣ তাহলে REQUIRES_NEW / NESTED এ কী হয়?
+✔ REQUIRES_NEW
+
+নতুন physical connection নেয় এমন না
+
+নতুন “logical transaction” শুরু হয়
+
+কিন্তু connection সাধারণত pool থেকে reuse হয়
+(যদি available থাকে)
+
+যদি pool idle connection না পায় → তখনই নতুন physical connection তৈরি করে।
+
+✔ NESTED
+
+একই physical connection ব্যবহার করে
+
+JDBC savepoint ব্যবহার করে
+
+কখনও নতুন connection নেয় না
+
+🔥 4️⃣ Example
+
+ধরা যাক pool size = 10
+
+Scenario:
+
+outerMethod() → @Transactional
+innerMethod() → @Transactional(REQUIRES_NEW)
+
+Flow:
+
+outerMethod → pool থেকে connection-A নেয়
+
+innerMethod(REQUIRES_NEW) →
+
+outer-এর connection pause
+
+pool থেকে নতুন connection-B নেয়
+(যদি free থাকে)
+
+commit/rollback
+
+দুই connection-ই pool-এ ফিরে যায়
