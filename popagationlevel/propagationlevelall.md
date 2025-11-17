@@ -99,7 +99,7 @@ innerNested() error → শুধু nested অংশ rollback
 outer এখনো চলতে পারে (continue)
 
 কিন্তু outer যদি পরে fail করে → পুরো transaction rollback হবে।
-
+```
 🔥 Main Difference (সহজ comparison)
 বিষয়	REQUIRES_NEW	NESTED
 Transaction type	সম্পূর্ণ নতুন	Outer transaction-এর ভিতরে sub transaction
@@ -112,4 +112,4 @@ Usage	আলাদা ভাবে commit দরকার	বড় transaction-এ
 REQUIRES_NEW = আলাদা transaction, outer এর সাথে কোনো সম্পর্ক নেই
 
 NESTED = একই transaction, শুধু savepoint দিয়ে inner handle করা হয়
-
+```
