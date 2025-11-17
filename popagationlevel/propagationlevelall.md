@@ -114,7 +114,7 @@ REQUIRES_NEW = আলাদা transaction, outer এর সাথে কোন�
 NESTED = একই transaction, শুধু savepoint দিয়ে inner handle করা হয়
 ```
 ## Physical Connection vs Logical Transaction
-
+```
 ✔ Physical connection কী?
 
 ডাটাবেসের সাথে আসল network-level connection
@@ -191,3 +191,4 @@ pool থেকে নতুন connection-B নেয়
 commit/rollback
 
 দুই connection-ই pool-এ ফিরে যায়
+```
