@@ -1,3 +1,4 @@
+## We can not used NESTED propagation level in spring jpa, to used nested jpa  we have to used jdbc.
 ## Spring Transaction Propagation: NESTED vs REQUIRES_NEW (Bangla Explanation)
 
 Spring Boot-এ transactional method যখন আরেক transactional method-কে কল করে, তখন Propagation নির্ধারণ করে তাদের transaction flow কেমন হবে।
