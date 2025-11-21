@@ -182,3 +182,126 @@ public class TxConfig {
 
 কিন্তু Spring Boot সাধারণত default auto-configure করে দেয়, তাই আলাদা configurationও লাগেনা।
 ```
+Spring এ CMT (Container-Managed Transactions) হলো এমন এক ধরনের ট্রানজ্যাকশন ম্যনেজমেন্ট যেখানে ট্রানজ্যাকশন কন্ট্রোল (begin / commit / rollback) ডেভেলপার করে না—Spring Container নিজে স্বয়ংক্রিয়ভাবে ম্যানেজ করে।
+
+এটি সাধারণত Spring এর Declarative Transaction Management (যেমন @Transactional) ব্যবহার করে করা হয়।
+
+##  CMT (Container-Managed Transaction) Spring এ কী?
+```
+Spring Framework এ যখন আপনি কোনো মেথডে @Transactional দেন, তখন Spring Container:
+
+✔ ট্রানজ্যাকশন শুরু করে
+✔ সফল হলে commit করে
+✔ exception হলে rollback করে
+✔ propagation নিয়ন্ত্রণ করে
+✔ isolation level বজায় রাখে
+
+অর্থাৎ — ডেভেলপারকে PlatformTransactionManager ব্যবহার করে ম্যানুয়ালি কিছু করতে হয় না।
+
+এটাই CMT = Container Managed Transaction।
+
+🔍 CMT কেন ব্যবহার করা হয়?
+সুবিধা	ব্যাখা
+কম কোড, বেশি কাজ	begin/commit/rollback লেখার দরকার নেই
+কোড ক্লিন	ব্যবসায়িক লজিক-এ transaction কোড থাকে না
+consistent behavior	সব মেথড একইভাবে ট্রানজ্যাকশন অনুসরণ করে
+Declarative	কনফিগারেশন annotation দিয়েই হয়ে যায়
+🧩 Spring এ CMT কিভাবে কাজ করে?
+
+যখন আপনি @Transactional ব্যবহার করেন:
+
+@Service
+public class BankService {
+
+    @Autowired
+    private AccountRepository repo;
+
+    @Transactional
+    public void transfer(Long fromId, Long toId, double amount) {
+        Account from = repo.findById(fromId).get();
+        Account to   = repo.findById(toId).get();
+
+        from.setBalance(from.getBalance() - amount);
+        to.setBalance(to.getBalance() + amount);
+
+        repo.save(from);
+        repo.save(to);
+    }
+}
+
+
+এখানে:
+
+🔹 Step 1: Spring Proxy তৈরি করে
+
+BankService ক্লাসের জন্য Spring একটি Proxy তৈরি করে।
+
+🔹 Step 2: Proxy মেথড কল ইন্টারসেপ্ট করে
+
+pxroxy → transfer() মেথড কল হলে:
+
+Transaction শুরু করে
+
+মেথড execute করে
+
+Exception হলে rollback
+
+Success হলে commit
+
+🔹 Step 3: ট্রানজ্যাকশন boundary Spring finalize করে।
+🎯 Spring CMT এ @Transactional কী কী নিয়ন্ত্রণ করে?
+➤ Propagation
+
+মেথড কোন ট্রানজ্যাকশন ফ্লো ব্যবহার করবে
+
+যেমন:
+
+REQUIRED
+
+REQUIRES_NEW
+
+MANDATORY
+
+SUPPORTS
+
+➤ Isolation Level
+
+READ_COMMITTED
+
+REPEATABLE_READ
+
+SERIALIZABLE
+
+➤ Read Only Transaction
+
+@Transactional(readOnly = true)
+
+📌 Spring CMT বনাম BMT (Bean Managed Transaction)
+Feature	CMT	BMT
+কে ট্রানজ্যাকশন ম্যানেজ করে?	Spring Container	আপনি নিজে
+কোড লিখতে হয়?	না	হ্যাঁ
+জটিলতা	কম	বেশি
+Annotation	@Transactional	PlatformTransactionManager
+🔥 উদাহরণ: BMT (ম্যানুয়াল) - Container করে না
+
+(আপনি আগের মেসেজে যে উদাহরণ পাঠিয়েছিলেন)
+
+TransactionStatus status = txManager.getTransaction(new DefaultTransactionDefinition());
+try {
+    // code
+    txManager.commit(status);
+} catch (Exception e) {
+    txManager.rollback(status);
+}
+
+
+এটি BMT (Bean Managed Transaction)।
+এখানে Developer নিজে ট্রানজ্যাকশন তৈরি করছে।
+
+🎉 FINAL SUMMARY (সহজভাবে)
+
+✔ CMT মানে Spring Container নিজে ট্রানজ্যাকশন শুরু/কমিট/রোলব্যাক পরিচালনা করে।
+✔ ডেভেলপার শুধু @Transactional ব্যবহার করলেই হয়।
+✔ সবচেয়ে ব্যবহৃত এবং সবচেয়ে clean approach।
+✔ Proxy mechanism ব্যবহার করে transaction boundary ম্যানেজ করে।
+```
