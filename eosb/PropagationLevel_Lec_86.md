@@ -426,7 +426,8 @@ Cashier decide করে:
 
 Vault কিছুই জানে না — Proxy সবকিছু হ্যান্ডেল করে।
 ```
-Spring CMT (Container-Managed Transaction) ব্যবহার করলে আপনি ম্যানুয়ালি PlatformTransactionManager দিয়ে ট্রানজ্যাকশন তৈরি করতে পারবেন না — এর কারণ খুবই গুরুত্বপূর্ণ।
+# Spring CMT (Container-Managed Transaction) ব্যবহার করলে আপনি ম্যানুয়ালি PlatformTransactionManager দিয়ে ট্রানজ্যাকশন তৈরি করতে পারবেন না — এর কারণ খুবই গুরুত্বপূর্ণ।
+```
 
 এটি বুঝতে হলে প্রথমে জানতে হবে CMT কী করতে চায়।
 
@@ -555,3 +556,4 @@ CMT এ:
 
 Proxy যখন transaction boundary control করছে,
 আপনি ভেতরে গিয়ে boundary বানালে পুরো system conflict করবে
+```
