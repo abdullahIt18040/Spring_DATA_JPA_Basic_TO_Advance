@@ -557,3 +557,80 @@ CMT এ:
 Proxy যখন transaction boundary control করছে,
 আপনি ভেতরে গিয়ে boundary বানালে পুরো system conflict করবে
 ```
+Propagation.MANDATORY কী? (Bangla ব্যাখ্যা)
+
+## MANDATORY মানে:
+
+👉 যে মেথডে এই propagation আছে, সেটি অবশ্যই একটি transaction এর ভিতরে execute হতে হবে।
+👉 যদি caller-এর transaction না থাকে → Spring Exception ছুঁড়ে দেবে (IllegalTransactionStateException)
+```
+🔥 কেন Mandatory ব্যবহার করা হয়?
+
+যখন তুমি চাও:
+
+এই মেথডটি transaction ছাড়া কখনো চলবে না
+
+কেউ ভুলে @Transactional না দিয়ে কল করলে যেন error আসে
+
+এই মেথড অবশ্যই parent transaction-এর অংশ হবে
+
+কখনোই নিজে নতুন transaction তৈরি করবে না
+
+📌 Mandatory কী করে?
+পরিস্থিতি	আচরণ
+Caller এ transaction আছে	সেই transaction join করবে
+Caller এ transaction নেই	Exception ছুঁড়ে দেবে (error)
+🚫 Mandatory দিয়ে নতুন Transaction তৈরি করা যায়?
+
+না।
+এটি কখনো নতুন transaction তৈরি করে না।
+এটি কেবল বলে — “transaction না থাকলে আমি কাজ করবো না।”
+
+📘 উদাহরণ
+ServiceA → Parent Method
+@Transactional
+public void mainMethod() {
+    serviceB.childMethod();
+}
+
+ServiceB → Mandatory
+@Transactional(propagation = Propagation.MANDATORY)
+public void childMethod() {
+   // must be inside a transaction
+}
+
+
+এখানে:
+
+✔️ mainMethod() → transaction create করেছে
+✔️ childMethod() → সেই transaction এ join করেছে
+❌ কিছুই নতুন transaction তৈরি হয় না।
+
+⚠️ যদি transaction না থাকে?
+public void callWithoutTx() {
+    serviceB.childMethod();   // ❌ ERROR
+}
+
+
+Spring থ্রো করবে:
+
+org.springframework.transaction.IllegalTransactionStateException:
+No existing transaction found for transaction marked with propagation 'mandatory'
+
+🎯 Mandatory কোথায় ব্যবহার হয়?
+Use-case	Reason
+কোডের কিছু critical অংশে transaction ছাড়া কাজ করা যাবে না	consistency বজায় রাখতে
+Nested service মেথড যেন সবসময় parent transaction ব্যবহার করে	transactional integrity
+ডেভেলপারকে ভুলভাবে non-transactional call করতে বাধা দিতে	safe design
+⭐ Final Summary (Bangla)
+
+MANDATORY = transaction must exist
+
+transaction না থাকলে = error throw করবে
+
+transaction থাকলে = join করবে
+
+নিজে কখনো নতুন transaction তৈরি করে না
+
+এটি মূলত safety guarantee দেয়
+```
