@@ -634,3 +634,85 @@ transaction থাকলে = join করবে
 
 এটি মূলত safety guarantee দেয়
 ```
+## Explicit Transaction (স্পষ্ট/নিজে নিয়ন্ত্রণ করা ট্রানজ্যাকশন)
+
+Explicit Transaction হলো এমন ট্রানজ্যাকশন যেটা আপনি নিজে হাতে শুরু, commit, rollback করেন।
+
+➡️ এখানে ডেভেলপার সম্পূর্ণভাবে নিয়ন্ত্রণ করে কবে ট্রানজ্যাকশন শুরু হবে, কোথায় commit হবে, কোথায় rollback হবে।
+```
+✔ উদাহরণ (Concept)
+BEGIN TRANSACTION;
+
+UPDATE account SET balance = balance - 1000 WHERE id = 1;
+UPDATE account SET balance = balance + 1000 WHERE id = 2;
+
+COMMIT;
+
+
+এখানে:
+
+BEGIN TRANSACTION → ট্রানজ্যাকশন শুরু
+
+সব SQL সফল হলে COMMIT
+
+কোনো সমস্যা হলে ROLLBACK
+
+✔ Spring Boot Example (Programmatic Transaction)
+TransactionStatus status = txManager.getTransaction(new DefaultTransactionDefinition());
+
+try {
+    // business logic
+    txManager.commit(status);
+} catch (Exception e) {
+    txManager.rollback(status);
+}
+
+
+➡️ এখানে developer নিজে transaction কন্ট্রোল করছে।
+
+⭐ সুবিধা
+
+পুরো নিয়ন্ত্রণ ডেভেলপারের হাতে
+
+Complex business logic এ খুব কাজে লাগে
+
+⭐ অসুবিধা
+
+কোড বড় ও জটিল হয়
+
+ভুল হলে deadlock/rollback সমস্যা বাড়তে পারে
+
+⭐ Implicit Transaction (অস্পষ্ট/স্বয়ংক্রিয় ট্রানজ্যাকশন)
+
+Implicit Transaction মানে—ট্রানজ্যাকশন আপনি ডিক্লেয়ার করেন না; Framework বা Database নিজে থেকেই handle করে।
+
+➡️ Spring Boot এ @Transactional ব্যবহার করলে Implicit Transaction হয়।
+
+✔ Example (Declarative Transaction – CMT)
+@Transactional
+public void transferMoney() {
+    accountRepository.debit(1, 1000);
+    accountRepository.credit(2, 1000);
+}
+
+
+এখানে:
+
+Spring AOP Proxy স্বয়ংক্রিয়ভাবে transaction শুরু করে
+
+মেথড শেষ হলে success → commit, exception → rollback
+
+⭐ সুবিধা
+
+Code clean, readable
+
+Spring নিজে lifecycle maintain করে
+
+কম ভুল হওয়ার সুযোগ
+
+⭐ অসুবিধা
+
+Hidden behavior → debug করা কখনও কঠিন
+
+Nested transaction control সীমিত
+```
