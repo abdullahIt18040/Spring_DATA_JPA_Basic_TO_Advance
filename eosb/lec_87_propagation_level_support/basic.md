@@ -48,6 +48,14 @@ Non-transactional operation হিসেবে execute করতে পারে
 4️⃣ সাধারণ চিত্র
 Parent Transaction Exists → SUPPORTS method joins it
 Parent Transaction Does NOT Exist → SUPPORTS method executes non-transactionally
-<img width="502" height="477" alt="image" src="https://github.com/user-attachments/assets/cb3e1f61-a879-4fd3-9d27-5ffbb0588fe7" />
 
+@tX(Requerd)
+m1()
+{           tx-1
+m2()
+}
+@tx(support)
+m2(){
+ join with tx-1
+}
 ```
