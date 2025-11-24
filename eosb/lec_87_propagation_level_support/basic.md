@@ -58,4 +58,17 @@ m2()
 m2(){
  join with tx-1
 }
+
+2nd case
+m1()
+{          non-transaction
+m2()
+}
+@tx(support)
+m2(){
+ execute with out tansaction
+}
+
+
+
 ```
