@@ -2,6 +2,9 @@
 
 ## propagation level : SUPPORTS 
 ```
+peristance context (Persistence Context হলো Hibernate এর একটি মেমোরি-ভিত্তিক Live Tracking Cache,
+যেখানে transactional entity গুলো থাকে এবং Hibernate স্বয়ংক্রিয়ভাবে তাদের পরিবর্তন track করে)
+
 মূল ধারণা
 
 SUPPORTS মানে:
@@ -169,4 +172,140 @@ Result:
 ✔ First user data saved in DB
 ❌ Exception thrown
 ❌ No rollback
+
+
+```
+## Persistence Context — সহজ বাংলা ব্যাখ্যা
+
+Persistence Context হলো Hibernate/Spring JPA এর একটি “Cash / Memory Area”
+যেখানে আপনার entity objects গুলো transaction চলার সময় মেমোরিতে স্টোর থাকে।
+```
+👉 একে বলা হয়
+✔ First Level Cache
+✔ Managed State Container
+
+✔ Persistence Context কী করে?
+
+Spring এ যখন @Transactional মেথড শুরু হয়:
+
+Hibernate একটি Persistence Context (Session) তৈরি করে।
+
+মেথডের ভিতরে Entity লোড করলে Hibernate সেটিকে মেমোরিতে রাখে।
+
+একই entity আবার লোড করলে DB hit করে না — Cached value ফেরত দেয়।
+
+Entity তে কোনো পরিবর্তন করলে Hibernate track করে রাখে।
+
+Transaction শেষ হলে Hibernate অটোমেটিক সব পরিবর্তন DB তে flush করে দেয়।
+
+📌 সহজ উদাহরণ
+@Transactional
+public void updateUser() {
+
+    User u1 = userRepo.findById(1L); // 1st query → hits DB
+    User u2 = userRepo.findById(1L); // 2nd query → NO DB (from Persistence Context)
+
+    u1.setFirstName("Mamun Updated");
+
+    // No save() needed → Hibernate detects change
+}
+
+👉 কেন দ্বিতীয়বার DB query হয়নি?
+
+কারণ u1 entity already stored in persistence context.
+
+✔ Persistence Context এর States
+State	Meaning
+Transient	DB-তে নেই, Context-এ নেই
+Persistent	Context-এর ভেতরে আছে, Hibernate track করছে
+Detached	Context থেকে বের হয়ে গেছে, আর track হয় না
+Removed	Context-এ আছে, তবে delete হওয়ার জন্য marked
+✔ Context কিভাবে কাজ করে (Step-by-step)
+
+ধরি আপনার transaction এইরকম:
+
+@Transactional
+public void process() {
+    User u = userRepo.findById(1L);  
+    u.setName("Mamun");
+}
+
+Step 1️⃣ — DB থেকে data load
+
+Hibernate SELECT * FROM users WHERE id=1 চালায়
+এবং সেই object কে Persistence Context এ রাখে।
+
+Step 2️⃣ — Object পরিবর্তন (tracking)
+
+আপনি যখন u.setName("Mamun") করেন
+Hibernate সেটাকে note করে রাখে কিন্তু তৎক্ষণাৎ DB-তে আপডেট করে না।
+
+Step 3️⃣ — Transaction শেষ হলে:
+
+Hibernate automatically:
+
+changes detect করে
+
+generate করে:
+
+UPDATE users SET name='Mamun' WHERE id=1
+
+✔ কেন Persistence Context গুরুত্বপূর্ণ?
+✔ Performance: কম database query
+✔ Auto-dirty-checking: save() না করলেও Hibernate পরিবর্তন ধরে
+✔ Transaction consistency
+✔ Object identity guarantee
+✔ Real Example (Identity Guarantee)
+User u1 = em.find(User.class, 1L);
+User u2 = em.find(User.class, 1L);
+
+
+👉 Hibernate কখনো একই ID-এর দুইটা object তৈরি করবে না।
+u1 == u2 (same object in memory)
+
+✔ Persistence Context কখন clear হয়?
+
+Transaction শেষ হলে
+
+entityManager.clear() দিলে
+
+entityManager.detach(entity) দিলে
+
+@Transactional boundary শেষ হলে
+
+🔥 Real-world Scenario
+
+ধরুন আপনি E-commerce এ Order place করছেন।
+
+@Transactional
+public void placeOrder() {
+    Product p = repo.findById(10L);  
+    p.setStock(p.getStock() - 1); // update stock
+
+    Order o = new Order(...);
+    orderRepo.save(o);
+}
+
+
+Hibernate সবকিছু ধরে রেখে transaction শেষে:
+
+product stock update
+
+order save
+
+একটি single transaction এ সম্পন্ন করে।
+
+🎯 Summary (One Line)
+```
+Persistence Context হলো Hibernate এর একটি মেমোরি-ভিত্তিক Live Tracking Cache,
+যেখানে transactional entity গুলো থাকে এবং Hibernate স্বয়ংক্রিয়ভাবে তাদের পরিবর্তন track করে।
+
+যদি চান, আমি Persistence Context + Hibernate Flush Modes (AUTO, COMMIT, ALWAYS) — এগুলোও deep
+```
+peristance context (get entity form database)
+   |  flush()
+   database pool .
+   | commit().
+   database.
+
 ```
