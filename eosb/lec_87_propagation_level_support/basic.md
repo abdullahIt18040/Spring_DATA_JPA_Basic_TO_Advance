@@ -407,3 +407,244 @@ public void saveLog(String msg) {
 
 NOT_SUPPORTED মানে — এই মেথড ট্রানজ্যাকশন চায় না; আগের ট্রানজ্যাকশন থাকলে সেটিও থামিয়ে দেয়।
 ```
+## Explain logging, audit, file upload, email sending, external API call—
+
+```
+1. Logging (লগিং)
+
+কোনো অ্যাপ্লিকেশনের ভিতরে কী হচ্ছে তার তথ্য রাখা।
+যেমন: কোন মেথড কল হচ্ছে, কত সময় লাগছে, error হলে কী error হচ্ছে।
+
+📌 উদাহরণ:
+
+User লগইন করেছে
+
+Product added হয়েছে
+
+Exception throw হয়েছে
+
+Request/Response details
+
+📌 Logging কেন গুরুত্বপূর্ণ?
+
+Debug করতে সাহায্য করে
+
+Production issue খুঁজে বের করা সহজ হয়
+
+Performance monitor করা যায়
+
+📌 Logging ব্যবহার হয়:
+
+log.info(), log.warn(), log.error()
+
+✅ 2. Audit (অডিট)
+
+কে, কখন, কী কাজ করেছে—তার রেকর্ড রাখা।
+
+Logging এবং auditing একই রকম মনে হয়, কিন্তু auditing business event ট্র্যাক করে।
+
+📌 উদাহরণ:
+
+Ahmed updated customer address
+
+Admin deleted a user
+
+A transaction of 5000 BDT created by Mamun
+
+📌 Audit table থাকে:
+
+AUDIT_LOG  
+(id, userId, action, timestamp, ipAddress)
+
+
+📌 এটি নিয়ামক সংস্থা, ব্যাংক, ফাইন্যান্সিয়াল অ্যাপে খুব গুরুত্বপূর্ণ।
+
+✅ 3. File Upload (ফাইল আপলোড)
+
+ব্যবহারকারী যখন সার্ভারে কোনো ফাইল (image/pdf/csv) পাঠায়, সেটি গ্রহণ করে সেভ করা বা প্রসেস করার কাজ।
+
+📌 ব্যবহার হয়:
+
+প্রোফাইল ছবি আপলোড
+
+CSV দিয়ে bulk data upload
+
+Report upload
+
+Document upload
+
+📌 গুরুত্বপূর্ণ কারণ:
+
+ফাইল বড় হতে পারে
+
+Upload slow হতে পারে
+
+Transaction-এর মধ্যে রাখলে পুরো DB transaction স্লো হয়ে যাবে
+=> তাই এটি সাধারণত transaction ছাড়া (NOT_SUPPORTED) চালানো হয়।
+
+✅ 4. Email Sending (ইমেইল পাঠানো)
+
+সার্ভার যখন কোনো event হলে ইমেইল পাঠায়।
+
+📌 উদাহরণ:
+
+Registration successful → একটি mail
+
+Money transfer → confirmation mail
+
+Password reset OTP
+
+📌 কেন transactional হওয়া উচিত নয়?
+
+Email server slow হতে পারে
+
+Failure common
+
+Email fail হলেও main business logic rollback করা ঠিক না
+
+উদাহরণ:
+Money transfer success → কিন্তু email sending ব্যর্থ
+👉 কিন্তু money transfer rollback উচিত না।
+
+✅ 5. External API Call (বাইরের সিস্টেমে কল করা)
+
+আপনার সিস্টেম যখন অন্য সার্ভার/API-তে request পাঠায়।
+
+📌 উদাহরণ:
+
+Payment gateway (SSLCommerz, bKash, Nagad)
+
+Third-party SMS service
+
+Geo-location API
+
+Bank core system API
+
+📌 কেন এটি transaction-এর বাইরে হয়?
+
+নেটওয়ার্ক slow হতে পারে
+
+API fail হতে পারে
+
+DB transaction hold করে রাখা খারাপ (timeout risk)
+
+🎯 প্রতিটা কাজের সাধারণ বৈশিষ্ট্য
+কাজ	Nature	কেন Transaction-এর বাইরে (NOT_SUPPORTED)?
+Logging	Light/simple	Fail হলেও main work rollback হওয়া উচিত নয়
+Audit	Business tracking	এটি independent log, rollback-এর সাথে মিল নেই
+File Upload	Slow	DB transaction slow হয়ে যায়
+Email Sending	Uncertain	Email fail ≠ Business fail
+External API Call	Network dependent	Network failure হলে DB operation অযথা rollback হবে
+🔥 কেন এগুলোতে Propagation.NOT_SUPPORTED ব্যবহার করা হয়?
+
+কারণ:
+
+এগুলো main business logic-এর অংশ নয়
+
+Rollback এর সাথে যুক্ত নয়
+
+Performance critical
+
+Slow বা failure-prone
+
+NOT_SUPPORTED দিলে:
+
+Running transaction suspend হয়
+
+Method non-transactional mode-এ চলে
+
+Main transaction safe থাকে
+```
+## Example 
+##   Example Code — Without NOT_SUPPORTED (Bad Practice)
+```
+@Transactional
+public void processPayment(Long userId, double amount) {
+    // Step 1: balance deduct
+    userRepository.updateBalance(userId, amount);
+
+    // Step 2: external API call 
+    // ❌ This slows/ risks the whole transaction
+    String response = restTemplate.postForObject(
+            "https://payment-gateway/pay",
+            Map.of("userId", userId, "amount", amount),
+            String.class
+    );
+}
+
+❌ সমস্যা:
+
+API slow হলে DB transaction long open
+
+API fail → পুরো payment rollback
+
+Network issue → DB lock হয়ে বসে থাকবে
+
+🟩 Example Code — With NOT_SUPPORTED (Correct)
+@Service
+public class PaymentService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PaymentGatewayService paymentGatewayService;
+
+    @Transactional
+    public void processPayment(Long userId, double amount) {
+        // Step 1: balance deduct (DB transaction)
+        userRepository.updateBalance(userId, amount);
+
+        // Step 2: make external API call (outside transaction)
+        paymentGatewayService.callPaymentAPI(userId, amount);
+    }
+}
+
+@Service
+public class PaymentGatewayService {
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void callPaymentAPI(Long userId, double amount) {
+
+        RestTemplate rest = new RestTemplate();
+
+        String response = rest.postForObject(
+                "https://payment-gateway/pay",
+                Map.of("userId", userId, "amount", amount),
+                String.class
+        );
+
+        System.out.println("API Response = " + response);
+    }
+}
+
+🔍 Flow Explanation
+Step 1: processPayment() starts a DB transaction (REQUIRED)
+
+DB update safely completed inside transaction.
+
+Step 2: callPaymentAPI() is called
+
+Because of NOT_SUPPORTED:
+
+If any transaction is running → Spring suspends it
+
+External API call runs without transaction
+
+API slow হলেও DB transaction প্রভাবিত হয় না
+
+API fail হলেও DB rollback হয় না
+
+🎯 বাস্তব উদাহরণ (বাংলা)
+
+ধরুন আপনি টাকা ট্রান্সফার সিস্টেম বানাচ্ছেন।
+
+Money deducted from sender → OK  
+API call to Bank Core System → Slow or timeout
+
+
+আপনি কি চান timeout এর কারণে transaction rollback হোক?
+👉 ❌ না।
+
+তাই API call সবসময় transaction suspend করে করা উচিত।
+```
