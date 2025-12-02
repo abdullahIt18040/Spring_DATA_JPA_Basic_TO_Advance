@@ -91,3 +91,79 @@ Exception → Spring transaction manager rolls back
 EntityManager discards all changes tracked in persistence context
 
 ```
+### Flow Diagram: EntityManager & Transaction Coordination
+```
+Client / Service Call
+        │
+        ▼
+ @Transactional Method Starts
+        │
+        ▼
+Spring Transaction Manager
+   - Begins DB Transaction
+   - Binds Persistence Context (EntityManager) to transaction
+        │
+        ▼
+EntityManager Operations
+  - em.find()/em.persist()/em.merge()/em.remove()
+  - Tracks entities in Persistence Context
+  - Dirty Checking enabled
+        │
+        ▼
+Method Execution Completes
+        │
+        ├─ If Success:
+        │     - EntityManager flushes changes to DB
+        │     - Transaction commits
+        │     - Persistence Context cleared
+        │
+        └─ If Exception:
+              - Transaction rolls back
+              - EntityManager discards all pending changes
+              - DB remains unchanged
+
+Step by Step Example
+@Service
+public class UserService {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    @Transactional
+    public void updateUser(Long id, String newName) {
+        // Step 1: Load entity (managed by EntityManager)
+        User user = em.find(User.class, id);
+
+        // Step 2: Modify entity (EntityManager tracks changes)
+        user.setName(newName);
+
+        // Step 3: Optional flush
+        // em.flush();  // Forces DB update before commit
+
+        // Step 4: If exception occurs, all changes rollback
+        if(newName.equals("error")) {
+            throw new RuntimeException("Force rollback");
+        }
+
+        // Step 5: Method ends → Transaction commits → DB updated
+    }
+}
+
+Explanation in Bangla
+
+Transaction শুরু হয় @Transactional দিয়ে → Spring Transaction Manager handle করে।
+
+EntityManager persistence context তৈরি হয় → DB operations track করে।
+
+em.find() বা em.persist() call করলে entity persistence context এ managed হয়।
+
+Dirty Checking: EntityManager automatically detects any change in managed entity।
+
+Method execution শেষ হলে:
+
+যদি success → flush() → commit → DB update
+
+যদি exception → rollback → DB অক্ষত থাকে
+
+Persistence Context commit/rollback শেষে clean হয়ে যায় → memory free।
+```
