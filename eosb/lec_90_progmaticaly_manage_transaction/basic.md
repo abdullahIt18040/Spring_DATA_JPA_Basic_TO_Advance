@@ -164,3 +164,94 @@ Payment Microservice → DB2
 @Transaction ব্যবহার করলে Spring বেছে নেবে:
 ➡ JtaTransactionManager
 ```
+## EntityManager, JpaTransactionManager, এবং PlatformTransactionManager কিভাবে Spring-এর ট্রান্সঅ্যাকশন ব্যবস্থায় সম্পর্কিত।
+```
+PlatformTransactionManager
+
+এটি Spring-এর বেসিক ট্রান্সঅ্যাকশন ইন্টারফেস।
+
+যেকোনো ট্রান্সঅ্যাকশন পরিচালনার জন্য Spring এটাকে ব্যবহার করে।
+
+Main Methods:
+
+getTransaction() → ট্রান্সঅ্যাকশন শুরু
+
+commit() → সফল হলে commit
+
+rollback() → Exception হলে rollback
+
+সহজভাবে বললে, সব ট্রান্সঅ্যাকশনের ম্যানেজার PlatformTransactionManager এর subtype।
+
+2️⃣ JpaTransactionManager
+
+এটি PlatformTransactionManager-এর implementation।
+
+Hibernate/JPA ব্যবহার করে যখন EntityManager থাকে, তখন Spring এটিকে ব্যবহার করে।
+
+কাজের ধরন:
+
+Spring যখন @Transactional Annotation দেখবে
+
+তখন JpaTransactionManager decide করবে কখন commit/rollback হবে
+
+EntityManager-এর সাথে tightly coupled।
+
+3️⃣ EntityManager
+
+JPA-এর মূল interface ডাটাবেজ অপারেশনের জন্য।
+
+CRUD, Query, Persist, Merge সব কাজ এখানেই হয়।
+
+কিন্তু EntityManager নিজে ট্রান্সঅ্যাকশন handle করে না।
+
+এজন্য Spring-এর JpaTransactionManager ব্যবহার করা হয়।
+
+4️⃣ তাদের সম্পর্ক (Relation Diagram এর মতো)
+@Transaction (method)
+        |
+        v
+Spring AOP Proxy (TransactionalInterceptor)
+        |
+        v
+PlatformTransactionManager (interface)
+        |
+        v
+JpaTransactionManager (implements PlatformTransactionManager)
+        |
+        v
+EntityManager (JPA persistence context)
+        |
+        v
+DB operations (commit/rollback)
+
+
+@Transactional → Spring AOP দিয়ে Intercept করে
+
+PlatformTransactionManager → ট্রান্সঅ্যাকশন API
+
+JpaTransactionManager → EntityManager-এর জন্য PlatformTransactionManager বাস্তবায়ন
+
+EntityManager → ডাটাবেজে SQL execute / persist / merge করে
+
+5️⃣ Flow Example
+@Transactional
+public void saveOrder(Order order) {
+    entityManager.persist(order);
+}
+
+```
+## Main relationship
+```
+Step-by-step:
+
+Spring AOP Interceptor detect করে @Transactional
+
+JpaTransactionManager → getTransaction() করে ট্রান্সঅ্যাকশন শুরু
+
+EntityManager → order persist করে
+
+যদি সব ঠিক থাকে → JpaTransactionManager → commit()
+
+যদি Exception হয় → JpaTransactionManager → rollback()
+\
+````
