@@ -258,3 +258,255 @@ Spring Data JPA	Developer-friendly repository API
 
 Spring Data JPA uses JPA rules, but relies on Hibernate to actually execute SQL in the database.
 ```
+What is AbstractPlatformTransactionManager (Super Simple Explanation)
+
+এটা Spring-এর transaction system-এর মা/বাবা ক্লাস।
+
+Spring এ যত ধরনের transaction manager আছে:
+
+JpaTransactionManager
+
+DataSourceTransactionManager
+
+HibernateTransactionManager
+
+JtaTransactionManager
+
+সবাই এই ক্লাসকে extend করে।
+
+কারণ transaction কীভাবে শুরু হবে, commit হবে, rollback হবে—এই common rules আগে থেকেই এখানে লেখা থাকে।
+
+🌿 Why does Spring need this class?
+
+কারণ Spring চায়:
+
+All transaction managers → Same rules follow করুক
+
+Code repeat না হোক
+
+Transaction start/commit/rollback workflow এক জায়গায় control করা যাক
+
+এটি থাকায় Spring খুব সহজে বিভিন্ন ধরনের DB / JPA / JDBC transaction manage করতে পারে।
+
+🌳 Simple Analogy (Very Easy)
+
+ধরুন আপনি একটি কোম্পানি চালান।
+
+Company Rules:
+
+অফিস কখন খুলবে
+
+কখন বন্ধ হবে
+
+ছুটি কীভাবে হবে
+
+এগুলো Company লিখে রাখে।
+এখন যেই Manager (HR, Sales, Finance) আসুক না কেন—
+সব Manager কে সেই rules follow করতে হবে।
+
+AbstractPlatformTransactionManager = Company Rules
+JpaTransactionManager = HR Manager
+DataSourceTransactionManager = Sales Manager
+HibernateTransactionManager = Finance Manager
+
+সব Manager নিজের কাজ করবে, কিন্তু rules একটি common place থেকে follow করবে।
+
+
+What is TransactionDefinition?
+
+TransactionDefinition হলো Spring-এর transaction properties বর্ণনা করার interface।
+
+Spring যখন একটি নতুন transaction শুরু করতে চায়, তখন ঠিক করে:
+
+Propagation কী হবে?
+
+Isolation level কী হবে?
+
+Timeout কত?
+
+Read-only হবে কিনা?
+
+এই সব তথ্য TransactionDefinition থেকে নেওয়া হয়।
+
+Spring এ এটি প্রধানত ব্যবহার হয়:
+
+@Transactional
+
+TransactionTemplate
+
+PlatformTransactionManager এ
+
+🌿 TransactionDefinition Contains 4 Main Things
+
+Spring-এর transaction start করার আগে TransactionDefinition এই ৪টি জিনিস define করে:
+
+1️⃣ Propagation Behavior (Propagation)
+
+Transaction কীভাবে আচরণ করবে?
+
+Seven types:
+
+Propagation	Meaning
+REQUIRED	Already transaction থাকলে join করবে, না থাকলে নতুন transaction তৈরি করবে
+REQUIRES_NEW	চলতি transaction suspend, নতুন transaction শুরু
+NESTED	nested transaction (savepoint)
+SUPPORTS	থাকলে join, না থাকলে non-transaction
+NOT_SUPPORTED	চাইলেও transaction চালানো যাবে না
+MANDATORY	transaction না থাকলে error
+NEVER	transaction থাকলে error
+
+Example:
+
+@Transactional(propagation = Propagation.REQUIRED)
+
+2️⃣ Isolation Level
+
+(For consistency control)
+
+Defines: When multiple transactions run at the same time, how data will behave?
+
+Level	Problems Prevented
+READ_UNCOMMITTED	No prevention (dirty read possible)
+READ_COMMITTED	Prevents dirty read
+REPEATABLE_READ	Prevents dirty + non-repeatable read
+SERIALIZABLE	Full isolation (most strict)
+
+Example:
+
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+
+3️⃣ Timeout
+
+Transaction কত সেকেন্ড পর্যন্ত চলতে পারবে?
+
+Default = no timeout
+
+Example:
+
+@Transactional(timeout = 5)   // 5 seconds
+
+
+Timeout exceed ➝ rollback.
+
+4️⃣ Read-Only Flag
+
+Transaction শুধুই read করবে?
+If yes:
+
+Hibernate unnecessary update checking বন্ধ করে
+
+কিছু DB optimization কাজ করে
+
+Example:
+
+@Transactional(readOnly = true)
+public List<User> getUsers() { ... }
+
+
+Read-only হলে update/insert করলে Spring error দিতে পারে।
+
+🌱 Combined Example
+@Transactional(
+    propagation = Propagation.REQUIRES_NEW,
+    isolation = Isolation.SERIALIZABLE,
+    timeout = 10,
+    readOnly = false
+)
+public void saveOrder() {
+   ...
+}
+
+## What is DefaultTransactionDefinition? (Super Simple)
+```
+DefaultTransactionDefinition হলো Spring-এর transaction এর default settings রাখা একটি সাধারণ class।
+
+এর কাজ:
+
+Transaction-এর default behavior define করা
+
+কোন transaction কোন property পাবে তা supply করা
+
+Spring যখন নতুন transaction শুরু করে → এই class এর information পড়ে
+
+এটা এমন এক class যেটা বলে দেয়:
+
+Propagation → REQUIRED (default)
+
+Isolation → DEFAULT (DB default)
+
+Timeout → no limit
+
+ReadOnly → false
+
+Name → null
+
+এই default settings ব্যবহার করে Spring transaction start করে।
+
+🌿 Why is it Needed?
+
+কারণ Spring যখন কোন transaction শুরু করে, তখন কিছু default rule দরকার হয়।
+
+যদি আপনার কোডে কখনো না থাকে:
+
+@Transactional(...)
+
+
+তাহলে Spring internally DefaultTransactionDefinition ব্যবহার করে default settings দিয়ে transaction চালায়।
+
+🌳 DefaultTransactionDefinition = Default Transaction Rules
+
+এটি মূলত TransactionDefinition interface-এর default implementation।
+
+✔️ Default Values inside DefaultTransactionDefinition
+Property	Default Value
+Propagation	REQUIRED
+Isolation	DEFAULT
+Timeout	TIMEOUT_DEFAULT = -1
+Read Only	false (means read-write)
+Name	null
+🍀 Example (Very Simple)
+
+Spring যখন আপনি simply লিখেন:
+
+@Transactional
+public void saveData() { }
+
+
+আপনি কোন সেটিং দেননি → Spring বলবে:
+
+"তাহলে default rule দিয়ে transaction চালাই।"
+
+এই default rule আসে:
+
+→ DefaultTransactionDefinition থেকে।
+💡 Programmatic Example (Manual)
+DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+
+TransactionStatus status =
+    transactionManager.getTransaction(def);
+
+try {
+    // business logic
+    transactionManager.commit(status);
+} catch (Exception e) {
+    transactionManager.rollback(status);
+}
+
+
+এখানে def ব্যবহার করে Spring transaction start করে।
+
+Spring internally:
+
+Propagation = REQUIRED
+Isolation = DEFAULT
+Timeout = none
+ReadOnly = false
+
+
+এই rule apply করে।
+
+🌸 SUPER SIMPLE SUMMARY
+
+DefaultTransactionDefinition হলো Spring-এর transaction-এর default settings holder ক্লাস।
+Spring কোনো custom rules না পেলে এই default settings দিয়ে transaction চালায়।
+```
