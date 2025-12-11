@@ -242,5 +242,110 @@ throw new ResourceNotFoundException("User not found");
 3xx	রিডাইরেক্ট	301, 302
 4xx	Client ভুল	400, 401, 404
 5xx	Server ভুল	500, 503
-
+ 
 ```
+## we can design html page for specific or group of status code.
+```
+if we want to dispaly error page for indivisual status code we have to create tempalte folder>>error>>400.html
+                                                                                                    >>401.html
+                                                                                                    
+if we want to dispaly error page for groupof  status code we have to create tempalte folder>>error>>4xx.html
+                                                                                                    >>5xx.html
+```
+## custom exception
+```
+@ResponseStatus(HttpStatus.NOT_EXTENDED)
+public class AccessDenide extends RuntimeException{
+    public AccessDenide(String message) {
+        super(message);
+    }
+}
+    @GetMapping("/info")
+    public String info()
+    {
+        if(1==1)
+        {
+         throw new AccessDenide("you are not allowed to access this resource") ;
+
+        }
+        return "info";
+    }
+```
+## Spring Boot-এ আমরা specific status code বা group status code এর জন্য custom error page দেখাতে পারি।
+
+এখন আমি পুরো বিষয়টি খুব সহজ বাংলা + example দিয়ে বুঝিয়ে দিচ্ছি।
+
+⭐ Spring Boot Custom Error Page Rules
+
+Spring Boot default ভাবে /error endpoint ব্যবহার করে।
+তুমি যদি custom error page বানাতে চাও, তবে Spring Boot templates/error/ ফোল্ডার চেক করে।
+```
+✅ 1. Individual Status Code Error Page
+
+যদি তুমি specific HTTP status code এর জন্য error page দেখাতে চাও:
+
+📁 src/main/resources/templates/error/
+
+400.html     → Bad Request
+401.html     → Unauthorized
+403.html     → Forbidden
+404.html     → Not Found
+500.html     → Internal Server Error
+
+Example Structure:
+templates/
+└── error/
+    ├── 400.html
+    ├── 401.html
+    ├── 403.html
+    ├── 404.html
+    ├── 500.html
+
+
+➡️ এখন 404 এ error হলে 404.html রেন্ডার হবে
+➡️ 400 এ error হলে 400.html
+
+✔ Example: 404.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Not Found</title>
+</head>
+<body>
+<h1>Oops! 404</h1>
+<p>The page you are looking for was not found.</p>
+</body>
+</html>
+
+✅ 2. Status Code Group Error Page
+
+যদি একটি status code গ্রুপ (যেমন সব 4xx বা সব 5xx) এর জন্য common page দেখাতে চাও:
+
+📁 src/main/resources/templates/error/
+
+4xx.html  → for ALL client errors (400–499)
+5xx.html  → for ALL server errors (500–599)
+
+Example Structure:
+templates/
+└── error/
+    ├── 4xx.html   ← সমস্ত 4xx এর জন্য
+    ├── 5xx.html   ← সমস্ত 5xx এর জন্য
+
+
+➡️ এখন 404, 400, 403—সবগুলোতে → 4xx.html রেন্ডার হবে
+➡️ 500, 503, 504—সবগুলোতে → 5xx.html রেন্ডার হবে
+
+⭐ Final Summary
+✔ Individual Status Code:
+error/404.html
+error/400.html
+error/500.html
+
+✔ Group of Status Code:
+error/4xx.html
+error/5xx.html
+```   
+                                                                                                    
+                                                                                                    
+                                                                                                    
