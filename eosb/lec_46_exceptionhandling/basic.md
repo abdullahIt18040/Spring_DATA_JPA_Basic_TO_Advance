@@ -123,6 +123,124 @@ Spring Boot automatically maps:
 👉 BasicErrorController*
 ```
 <img width="838" height="419" alt="image" src="https://github.com/user-attachments/assets/fbe9a6b4-3d93-4267-ac9b-2735614368a3" />
+HTTP Status Codes — 5 Main Categories
 
+## HTTP status কোড ৫টি গ্রুপে ভাগ করা:
+```
+🔵 1xx — Informational (তথ্য প্রদান)
 
+Server বলছে:
+“Request পেয়েছি, কাজ করছি।”
 
+👉 সাধারণত API-তে বেশি ব্যবহার হয় না।
+
+100 Continue
+
+101 Switching Protocols
+
+🟢 2xx — Success (সফল হয়েছে)
+
+Client-এর request সফল হলে server এই কোড দেয়।
+
+✔ 200 OK
+
+সবচেয়ে common
+Example: Data successfully returned.
+
+✔ 201 Created
+
+Server-এ নতুন resource তৈরি হয়েছে
+Example: নতুন user created
+
+✔ 204 No Content
+
+Request সফল, কিন্তু body নেই
+Example: Delete সফল হলে
+
+🟡 3xx — Redirection (দিক নির্দেশনা)
+
+Client-কে অন্য জায়গায় যেতে বলা হয়।
+
+✔ 301 Moved Permanently
+
+URL স্থায়ীভাবে পরিবর্তন হয়েছে
+
+✔ 302 Found
+
+Temporary redirect
+
+✔ 304 Not Modified
+
+Cache data valid আছে, নতুন data দরকার নেই
+
+🔴 4xx — Client Error (Client-এর ভুল)
+
+ইঙ্গিত দেয় client ভুল request পাঠিয়েছে।
+
+✔ 400 Bad Request
+
+Request ভুলভাবে পাঠানো
+Example: ভুল JSON, missing fields
+
+✔ 401 Unauthorized
+
+Client login করে নি
+→ Authentication needed
+
+✔ 403 Forbidden
+
+Client login আছে কিন্তু অনুমতি নেই
+→ Authorization problem
+
+✔ 404 Not Found
+
+URL / Resource পাওয়া যায় নি
+
+✔ 409 Conflict
+
+Data conflict
+Example: duplicate email, version mismatch
+
+⚫ 5xx — Server Error (Server-এর সমস্যা)
+
+Server-এর ভিতরে কোনো error হয়েছে।
+
+✔ 500 Internal Server Error
+
+Generic server error
+Programmer-এর bug হলে সাধারণত এটি পাওয়া যায়।
+
+✔ 502 Bad Gateway
+
+Server অন্য সার্ভারের থেকে invalid response পেয়েছে
+
+✔ 503 Service Unavailable
+
+Server down বা overloaded
+
+✔ 504 Gateway Timeout
+
+Upstream server সময়মতো response দেয়নি
+
+⭐ Practical Examples (Spring Boot)
+✔ 200 OK Example
+return ResponseEntity.ok(user);
+
+✔ 201 Created Example
+return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+
+✔ 400 Bad Request Example
+throw new IllegalArgumentException("Invalid input!");
+
+✔ 404 Not Found Example
+throw new ResourceNotFoundException("User not found");
+
+🎯 Summary Table
+সেকশন	মানে	উদাহরণ
+1xx	তথ্য	Continue
+2xx	সফল	200 OK
+3xx	রিডাইরেক্ট	301, 302
+4xx	Client ভুল	400, 401, 404
+5xx	Server ভুল	500, 503
+
+```
