@@ -1,6 +1,6 @@
 Error Handling 
 ## Request Flow in Spring Boot (Step-by-step)
-
+```
 1. Embedded Server Receives the Request
    >>
    
@@ -44,6 +44,6 @@ DispatcherServlet → ডাকে RequestMappingHandlerMapping
 
 RequestMappingHandlerMapping সব controller method গুলো scan করে দেখবে:
 then pass request to the controller
-
+```
 <img width="858" height="388" alt="image" src="https://github.com/user-attachments/assets/b8714547-72e8-4c4e-bbaa-cae62e66d4f9" />
 
