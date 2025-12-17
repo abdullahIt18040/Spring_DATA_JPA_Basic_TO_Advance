@@ -224,6 +224,117 @@ public class StudentMVCController {
 }
 ```
 
+## ExceptionHandler interface(assinable_type) base Rest and MVC Seperate
+```
+interfaces :
+
+for mvc type handle
+
+public interface MvcControllerIdenfierInterface {
+}
+---------------------------------------------------------------------
+for rest type handle
+public interface RestControllerIdenfierInterface {
+}
+
+EXCEPTION handler 
+-----------------------------------------------------------------------------------
+@RestControllerAdvice(assignableTypes = RestControllerIdenfierInterface.class)
+public class GlobalExceptionHandler {
+
+    @Autowired
+   private ErrorAttributes errorAttributes;
+
+   @ResponseBody
+   @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(ResourceNotFountException.class)
+    public ErrorResponse resourceNotFound(ResourceNotFountException ex)
+    {
+        return new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.toString(),
+                ex.getMessage()
+        );
+    }
+
+//@ControllerAdvice(annotations = MVCControllerIdentifier.class)
+@ControllerAdvice(assignableTypes = MvcControllerIdenfierInterface.class)
+public class GloblMvcExceptionHandler {
+
+
+    @ExceptionHandler(ResourceNotFountException.class)
+    public String resourceNotFound(ResourceNotFountException ex, Model model)
+    {
+        model.addAttribute("error",ResourceNotFountException.class.getSimpleName());
+        model.addAttribute("message",ex.getMessage());
+
+        return "resource_not_found";
+
+    }
+}
+----------------------------------------------------------
+controllers
+
+public class StudentMVCController implements MvcControllerIdenfierInterface {
+    public StudentMVCController()
+    {
+        students.add( new Student(1,"AND",3.52f)) ;
+        students.add( new Student(2,"AND1",3.52f)) ;
+        students.add( new Student(3,"AND3",3.522f)) ;
+
+
+    }
+
+    private final List<Student> students = new ArrayList<>();
+    @GetMapping("/students")
+    public List<Student>students()
+    {
+
+        return students;
+    }
+    @GetMapping("/student")
+    public String getStudent(@RequestParam("id") int id, Model model)
+    {
+        var student= students.stream().filter(
+                s->s.id()==id).findFirst().orElseThrow(()-> new ResourceNotFountException("" +
+                "student not found id id [%d].formatted(id) "));
+        model.addAttribute("student",student);
+        return "student";
+
+
+    }
+}
+
+restcontroller :
+@RequestMapping("/api/v1")
+public class StudentController implements RestControllerIdenfierInterface {
+    public StudentController()
+    {
+      students.add( new Student(1,"AND",3.52f)) ;
+        students.add( new Student(2,"AND1",3.52f)) ;
+        students.add( new Student(3,"AND3",3.522f)) ;
+
+
+    }
+
+private List<Student>students = new ArrayList<>();
+@GetMapping("/students")
+ public List<Student>students()
+ {
+
+     return students;
+ }
+ @GetMapping("/student")
+ public Student getStudent(@RequestParam("id") int id)
+ {
+   return students.stream().filter(
+            s->s.id()==id).findFirst().orElseThrow(()-> new ResourceNotFountException("" +
+           "student not found id id [%d]\".formatted(id) "));
+
+}
+
+}
+------------------------------------------------------
+```
 
 
 
