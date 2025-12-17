@@ -1,7 +1,24 @@
 ## ExceptionHandler annotation base Rest and MVC Seperate
 
 ```
+Handld all MVC all exception
+---------------------------------------------------------------
+@ControllerAdvice(annotations = MVCControllerIdentifier.class)
+public class GloblMvcExceptionHandler {
 
+
+    @ExceptionHandler(ResourceNotFountException.class)
+    public String resourceNotFound(ResourceNotFountException ex, Model model)
+    {
+        model.addAttribute("error",ResourceNotFountException.class.getSimpleName());
+        model.addAttribute("message",ex.getMessage());
+
+        return "resource_not_found";
+
+    }
+}
+
+--------------------------------------------------------------------------------
 @RestControllerAdvice(annotations = RestControllerIdentifier.class)
 public class GlobalExceptionHandler {
 
