@@ -16,9 +16,11 @@ public class GloblMvcExceptionHandler {
         return "resource_not_found";
 
     }
+---
 }
 
 --------------------------------------------------------------------------------
+Handld all Rest controller all exception
 @RestControllerAdvice(annotations = RestControllerIdentifier.class)
 public class GlobalExceptionHandler {
 
