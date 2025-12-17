@@ -478,3 +478,38 @@ just called calssname
 
 
 <img width="988" height="476" alt="image" src="https://github.com/user-attachments/assets/40edf17e-3aca-479b-b351-605ecb580ee9" />
+
+
+## ExceptionHandler  Rest and MVC With in same class
+
+```
+
+@ControllerAdvice()
+public class GloblMvcExceptionHandler {
+
+//  @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(ResourceNotFountException.class)
+    public Object resourceNotFound(HttpServletRequest request,
+                                   ResourceNotFountException ex, Model model)
+    {
+
+        var accepts =  request.getHeader(HttpHeaders.ACCEPT);
+        if(accepts.contains(MediaType.TEXT_HTML_VALUE))
+        {
+            model.addAttribute("error",
+                    ResourceNotFountException.class.getSimpleName());
+            model.addAttribute("message",ex.getMessage());
+
+            return "resource_not_found";
+        }
+        var error = new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.toString(),
+                ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+
+
+    }
+}
+```
