@@ -471,3 +471,10 @@ public class GloblMvcExceptionHandler {
 }
 ----------------------------
 ```
+
+## ExceptionHandler basePackageClasses base Rest and MVC Seperate
+
+just called calssname
+
+
+<img width="988" height="476" alt="image" src="https://github.com/user-attachments/assets/40edf17e-3aca-479b-b351-605ecb580ee9" />
