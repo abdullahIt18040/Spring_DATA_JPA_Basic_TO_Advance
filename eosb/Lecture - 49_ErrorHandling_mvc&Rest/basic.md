@@ -336,6 +336,137 @@ private List<Student>students = new ArrayList<>();
 ------------------------------------------------------
 ```
 
+## ExceptionHandler package base Rest and MVC Seperate
+controller :
 
 
+package com.sil.bulktranactionloginapp.controlles.mvc;
 
+import com.sil.bulktranactionloginapp.entities.Student;
+import com.sil.bulktranactionloginapp.exceptionHandlers.ResourceNotFountException;
+import com.sil.bulktranactionloginapp.interfaces.MvcControllerIdenfierInterface;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.ArrayList;
+import java.util.List;
+@Controller
+//@MVCControllerIdentifier
+
+//implement assinable type
+
+public class StudentMVCController2  {
+    public StudentMVCController2()
+    {
+        students.add( new Student(1,"AND",3.52f)) ;
+        students.add( new Student(2,"AND1",3.52f)) ;
+        students.add( new Student(3,"AND3",3.522f)) ;
+
+
+    }
+
+    private final List<Student> students = new ArrayList<>();
+    @GetMapping("/students2")
+    public List<Student>students()
+    {
+
+        return students;
+    }
+    @GetMapping("/student2")
+    public String getStudent(@RequestParam("id") int id, Model model)
+    {
+        var student= students.stream().filter(
+                s->s.id()==id).findFirst().orElseThrow(()-> new ResourceNotFountException("" +
+                "student not found id id [%d].formatted(id) "));
+        model.addAttribute("student",student);
+        return "student";
+
+
+    }
+}
+
+--------------
+package com.sil.bulktranactionloginapp.controlles.rest;
+
+import com.sil.bulktranactionloginapp.entities.Student;
+import com.sil.bulktranactionloginapp.exceptionHandlers.ResourceNotFountException;
+import com.sil.bulktranactionloginapp.interfaces.RestControllerIdenfierInterface;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+//@RestControllerIdentifier
+//implement assinabletype
+@RequestMapping("/api/v2")
+public class StudentController2  {
+    public StudentController2()
+    {
+      students.add( new Student(1,"AND",3.52f)) ;
+        students.add( new Student(2,"AND1",3.52f)) ;
+        students.add( new Student(3,"AND3",3.522f)) ;
+
+
+    }
+
+private List<Student>students = new ArrayList<>();
+@GetMapping("/students2")
+ public List<Student>students()
+ {
+
+     return students;
+ }
+ @GetMapping("/student2")
+ public Student getStudent(@RequestParam("id") int id)
+ {
+   return students.stream().filter(
+            s->s.id()==id).findFirst().orElseThrow(()-> new ResourceNotFountException("" +
+           "student not found id id [%d]\".formatted(id) "));
+
+}
+
+}
+================================================================================================
+
+exceptionhandler:
+------------------------------------------------------------------
+@RestControllerAdvice(basePackages = "com.sil.bulktranactionloginapp.controlles.rest")
+public class GlobalExceptionHandler {
+
+    @Autowired
+   private ErrorAttributes errorAttributes;
+
+   @ResponseBody
+   @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(ResourceNotFountException.class)
+    public ErrorResponse resourceNotFound(ResourceNotFountException ex)
+    {
+        return new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.toString(),
+                ex.getMessage()
+        );
+    }
+
+-------------------------------------------------------------------
+@ControllerAdvice(basePackages = "com.sil.bulktranactionloginapp.controlles.mvc")
+public class GloblMvcExceptionHandler {
+
+
+    @ExceptionHandler(ResourceNotFountException.class)
+    public String resourceNotFound(ResourceNotFountException ex, Model model)
+    {
+        model.addAttribute("error",ResourceNotFountException.class.getSimpleName());
+        model.addAttribute("message",ex.getMessage());
+
+        return "resource_not_found";
+
+    }
+}
+----------------------------
+```
