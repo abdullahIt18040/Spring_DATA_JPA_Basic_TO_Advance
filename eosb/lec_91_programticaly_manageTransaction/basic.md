@@ -231,16 +231,8 @@ Less boilerplate code
 
              The latest opened transaction becomes the “current” (active) transaction, and all database work runs inside it until it is committed or rolled back.
 
-             TX-1 START
-   ↓ (suspended)
-TX-2 START  ← ACTIVE
-   ↓
-Do DB work
-   ↓
-COMMIT TX-2
-   ↓
-TX-1 RESUMED
-   ↓
-COMMIT TX-1
 ```
+work flow:
+<img width="553" height="424" alt="image" src="https://github.com/user-attachments/assets/3061aeba-7a8a-43d5-8488-41a789f84fb5" />
+
 
