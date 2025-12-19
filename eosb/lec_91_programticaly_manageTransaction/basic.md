@@ -141,6 +141,7 @@ transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 ```
 ## Begin and control a transaction programmatically using PlatformTransactionManager or TransactionTemplate
+```
 DefaultTransactionDefinition def= new DefaultTransactionDefinition();
      def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
      def.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
@@ -195,4 +196,51 @@ Automatically begins & commits transaction
 Rolls back on RuntimeException
 
 Less boilerplate code
+```
+## transaction ordering, priority, and execution speed when multiple transactions are opened in the same method.
+
+     DefaultTransactionDefinition def= new DefaultTransactionDefinition();
+     def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+     def.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
+     def.setTimeout(10);
+
+
+     DefaultTransactionDefinition def2 = new DefaultTransactionDefinition();
+     def2.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        def2.setTimeout(12);
+
+
+
+
+
+
+         TransactionStatus status =transactionManager.getTransaction(def);
+        TransactionStatus status2 =  transactionManager.getTransaction(def2);
+         try {
+             var log = new  TransactionLog();
+             log.setStatus("success");
+             log.setAmount(1000.2);
+             log.setFromAccountId(2);
+             log.setToAccountId(1);
+
+             transactionlogrepo.save(log);
+             transactionManager.commit(status2);
+//             Account account = accntrepo.findbyid(2);
+//             account.setBlance(account.getBlance-1000);
+             transactionManager.commit(status);
+
+             The latest opened transaction becomes the “current” (active) transaction, and all database work runs inside it until it is committed or rolled back.
+
+             TX-1 START
+   ↓ (suspended)
+TX-2 START  ← ACTIVE
+   ↓
+Do DB work
+   ↓
+COMMIT TX-2
+   ↓
+TX-1 RESUMED
+   ↓
+COMMIT TX-1
+```
 
