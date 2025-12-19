@@ -199,7 +199,7 @@ Less boilerplate code
 ```
 ## transaction ordering, priority, and execution speed when multiple transactions are opened in the same method.
 ```
-we have to done latest transation fist then outside transaction complete.
+we have to done latest transation fist then outside transaction complete  when propagation level required new.
 
      DefaultTransactionDefinition def= new DefaultTransactionDefinition();
      def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
