@@ -140,3 +140,59 @@ transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 });
 
 ```
+## Begin and control a transaction programmatically using PlatformTransactionManager or TransactionTemplate
+DefaultTransactionDefinition def= new DefaultTransactionDefinition();
+     def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+     def.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
+     def.setTimeout(10);
+     
+        TransactionStatus status2 =  transactionManager.getTransaction(def2);
+
+        @Autowired
+private PlatformTransactionManager transactionManager;
+
+public void processTransaction() {
+    TransactionDefinition definition =
+            new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRED);
+
+    TransactionStatus status = transactionManager.getTransaction(definition);
+
+    try {
+        // 🔹 Business logic
+        saveData();
+        updateData();
+
+        // ✅ Commit transaction
+        transactionManager.commit(status);
+    } catch (Exception ex) {
+        // ❌ Rollback transaction
+        transactionManager.rollback(status);
+        throw ex;
+    }
+}
+✔ When to use
+Using TransactionTemplate (Recommended & Cleaner)
+
+This is safer and cleaner than manual begin/commit.
+
+Example
+@Autowired
+private TransactionTemplate transactionTemplate;
+
+public void processTransaction() {
+    transactionTemplate.execute(status -> {
+        // 🔹 Business logic
+        saveData();
+        updateData();
+        return null;
+    });
+}
+
+✔ Advantages
+
+Automatically begins & commits transaction
+
+Rolls back on RuntimeException
+
+Less boilerplate code
+
