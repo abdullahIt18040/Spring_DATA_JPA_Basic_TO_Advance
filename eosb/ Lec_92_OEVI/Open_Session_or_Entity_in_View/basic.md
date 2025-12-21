@@ -189,3 +189,28 @@ LazyInitializationException আসতে পারে
 🔹 3️⃣ Spring-এ Transaction-bound Resource
 
 Spring internally TransactionSynchronizationManager ব্যবহার করে:
+
+### 1️⃣ TransactionSynchronizationManager কী?
+
+TransactionSynchronizationManager হলো Spring Framework এর internal utility class যা transaction context ট্র্যাক করে।
+
+মূল কাজগুলো:
+
+কোন thread currently transaction-bound  করা
+
+Resource binding (DataSource, EntityManager, JDBC connection) handle করা
+
+Transaction synchronizations (commit/rollback callbacks) track করা
+
+Thread-local variable ব্যবহার করে transaction state manage করা
+
+সংক্ষেপে:
+Spring Transaction Management কে thread-aware & resource-aware করার জন্য এটি ব্যবহার করে।
+
+🔹 2️⃣ Key Responsibilities
+কাজ	ব্যাখ্যা
+Resource binding	JDBC connection, Hibernate Session বা EntityManager thread এ bind করে
+Synchronization	Transaction commit / rollback এর আগে / পরে custom code execute করা
+Transaction state check	Thread এ transaction আছে কিনা জানতে পারা (isActualTransactionActive()
+
+
