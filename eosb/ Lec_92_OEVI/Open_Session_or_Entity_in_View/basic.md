@@ -118,7 +118,7 @@ Thread-bound transactional context maintain করা যায়
 🔹 2️⃣ Resource Binding কেন দরকার?
 
 ধরুন আমরা Service → Repository → JDBC Layer call করি:
-
+```
 @Service
 class UserService {
     @Autowired
@@ -131,7 +131,7 @@ class UserService {
     }
 }
 
-
+```
 এখানে Service call করলে transaction start হয়
 
 Repository দুইবার database access করে
@@ -145,3 +145,47 @@ Same Connection/Session throughout transaction
 Commit / rollback একবারে apply হয়
 
 Lazy-loading Hibernate entities work correctly
+
+Transaction-bound কী?
+
+## Transaction-bound মানে হলো:
+
+
+কোন resource (যেমন JDBC Connection, Hibernate Session বা EntityManager) একটি transaction-এর সাথে যুক্ত করা আছে, এবং শুধু সেই transaction চলাকালীন active থাকবে।
+
+সহজভাবে:
+
+যখন transaction শুরু হয় → resource bind হয়
+
+যখন transaction শেষ হয় → resource unbind হয় (commit বা rollback)
+
+🔹 2️⃣ কেন Transaction-bound দরকার?
+```
+ধরা যাক আমরা Service → Repository → DAO call করছি:
+
+@Transactional
+public void createUser() {
+    userRepository.saveUser();
+    auditRepository.logAction();
+}
+```
+
+এখানে transaction active
+
+Resource (Connection / Session) same transaction-এর জন্য shared
+
+Commit/rollback একবারে apply হয়
+
+Lazy-loaded Hibernate associations কাজ করে, কারণ session transaction-bound
+
+যদি resource transaction-bound না থাকে, তবে:
+
+প্রতিটি DAO call আলাদা connection / session use করবে
+
+Transaction consistency হারাবে
+
+LazyInitializationException আসতে পারে
+
+🔹 3️⃣ Spring-এ Transaction-bound Resource
+
+Spring internally TransactionSynchronizationManager ব্যবহার করে:
