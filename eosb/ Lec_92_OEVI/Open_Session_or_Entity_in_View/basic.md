@@ -102,3 +102,46 @@ public Post getPostWithComments(Long id) {
 Lazy loading ঠিকভাবে transaction scope এ হয়
 
 N+1 query problem এর জন্য @EntityGraph বা join fetch ব্যবহার করা যায়
+##  1️⃣ Resource Binding কী?
+
+
+Resource binding হলো Spring / Hibernate Transaction Management এর একটি core concept, যার মাধ্যমে Resource (JDBC Connection, Hibernate Session, EntityManager) কে current thread-এ bind করা হয়, যাতে:
+
+Transaction active থাকাকালীন resource একাধিক layer (Service, Repository, DAO) ব্যবহার করা যায়
+
+Connection / Session reuse করা যায়
+
+Thread-bound transactional context maintain করা যায়
+
+সংক্ষেপে: resource কে thread-এর সাথে attach করা হলো Resource Binding
+
+🔹 2️⃣ Resource Binding কেন দরকার?
+
+ধরুন আমরা Service → Repository → JDBC Layer call করি:
+
+@Service
+class UserService {
+    @Autowired
+    private UserRepository repo;
+
+    @Transactional
+    public void createUser() {
+        repo.saveUser();  // JDBC connection বা Hibernate session দরকার
+        repo.logAction(); // একই connection reuse করতে হবে
+    }
+}
+
+
+এখানে Service call করলে transaction start হয়
+
+Repository দুইবার database access করে
+
+যদি resource bind না থাকে, তখন দুইটি আলাদা Connection / Session হবে → transaction consistency lose হবে
+
+✅ Resource binding ensures:
+
+Same Connection/Session throughout transaction
+
+Commit / rollback একবারে apply হয়
+
+Lazy-loading Hibernate entities work correctly
