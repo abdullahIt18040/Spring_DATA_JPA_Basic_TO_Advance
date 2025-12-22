@@ -1,1 +1,85 @@
 <img width="1806" height="783" alt="image" src="https://github.com/user-attachments/assets/ee4154b9-b66c-486e-8adb-a88c66e3b21d" />
+
+## HikariCP কী?
+
+HikariCP হলো Java/Spring Boot-এর সবচেয়ে fast ও lightweight JDBC Connection Pool।
+
+👉 Spring Boot 2+ / 3+ এ এটা default connection pool।
+
+🔹 Connection Pool মানে কী? (সহজ উদাহরণ)
+
+ভাবো:
+
+Database = ব্যাংক
+
+Connection = ব্যাংকের কাউন্টার
+
+User request = কাস্টমার
+
+❌ যদি pool না থাকে:
+
+প্রতিটা request এ নতুন connection খুলতে হবে
+
+আবার close করতে হবে
+
+খুব slow হবে
+
+✅ Pool থাকলে:
+
+আগেই কিছু connection বানানো থাকে
+
+দরকার হলে নেয়
+
+কাজ শেষ হলে ফেরত দেয়
+
+Performance অনেক ভালো
+
+🔹 HikariCP কীভাবে কাজ করে?
+1️⃣ Application start হলে
+
+HikariCP:
+
+কিছু database connection আগেই তৈরি করে
+
+এগুলো pool-এ রাখে
+
+[Conn1, Conn2, Conn3, Conn4, Conn5]
+
+2️⃣ যখন Service / Repository DB call করে
+DataSource.getConnection();
+
+
+HikariCP:
+
+pool থেকে একটা free connection দেয়
+
+নতুন connection বানায় না
+
+3️⃣ কাজ শেষ হলে
+connection.close();
+
+
+⚠️ এখানে আসলে connection close হয় না ❌
+✔️ pool-এ ফেরত চলে যায়
+
+🔹 Spring Boot-এ HikariCP Flow
+Controller
+   ↓
+Service
+   ↓
+Repository (JPA/JDBC)
+   ↓
+HikariCP Pool
+   ↓
+PostgreSQL
+
+🔹 গুরুত্বপূর্ণ Configuration (বাংলায়)
+spring.datasource.hikari.maximum-pool-size=10
+
+
+👉 একসাথে সর্বোচ্চ 10টা connection ব্যবহার করা যাবে
+
+spring.datasource.hikari.minimum-idle=5
+
+
+👉 সবসময় কমপক্ষে 5টা connection idle থাকবে
