@@ -213,4 +213,148 @@ Resource binding	JDBC connection, Hibernate Session বা EntityManager thread 
 Synchronization	Transaction commit / rollback এর আগে / পরে custom code execute করা
 Transaction state check	Thread এ transaction আছে কিনা জানতে পারা (isActualTransactionActive()
 
+## Spring MVC–তে Callable ব্যবহার করে Asynchronous (non-blocking) request কীভাবে কাজ করে—এটা আমি সহজ বাংলায় ধাপে ধাপে বুঝিয়ে দিচ্ছি।
+
+তোমার কোড
+```
+@ResponseBody
+@GetMapping("/postdetails/{id}")
+public Callable<Post> getPostDetailsById(@PathVariable("id") Integer id)
+{
+    System.out.println("out-side callable :........... "
+            + Thread.currentThread());
+
+    return new Callable<Post>() {
+
+        @Override
+        public Post call() throws Exception {
+            Thread.sleep(3000);
+
+            System.out.println("in-side callable : .................."
+                    + Thread.currentThread());
+
+            var post = postService.getPostById(id);
+            return post;
+        }
+    };
+}
+```
+Callable আসলে কী?
+
+Callable ব্যবহার করা হয় controller method-কে asynchronous করার জন্য।
+
+👉 মানে:
+
+Request আসবে
+
+Tomcat এর thread ব্যস্ত থাকবে না
+
+কাজটা অন্য একটি thread-এ হবে
+
+এটাকে বলে non-blocking request processing।
+
+ধাপে ধাপে কী ঘটে (সবচেয়ে গুরুত্বপূর্ণ অংশ)
+🔹 ১) Client request পাঠায়
+GET /postdetails/5
+
+
+Spring একটি Tomcat request thread ব্যবহার করে।
+
+🔹 ২) Callable এর বাইরে থাকা কোড
+System.out.println("out-side callable : " + Thread.currentThread());
+
+
+এটা চলে:
+
+Tomcat thread-এ
+
+Output হবে এমন:
+
+out-side callable : Thread[http-nio-8080-exec-1]
+
+
+👉 এখানে পর্যন্ত সবকিছু synchronous
+
+🔹 ৩) Spring Callable রিটার্ন পায়
+
+Spring বুঝে নেয়:
+
+“এই request টা asynchronous”
+
+তখন Spring:
+
+HTTP request pause করে
+
+Tomcat thread release করে দেয়
+
+call() মেথডকে পাঠায় অন্য thread-এ
+
+✔️ এতে Tomcat thread ফাঁকা হয়ে যায়
+
+🔹 ৪) call() মেথড চালু হয়
+System.out.println("in-side callable : " + Thread.currentThread());
+
+
+এটা চলে:
+
+Async executor thread-এ
+
+Output হবে:
+
+in-side callable : Thread[task-1]
+
+
+❗ এটা Tomcat thread না
+
+This thread comes from:
+
+SimpleAsyncTaskExecutor (default)
+
+or a custom TaskExecutor if configured
+
+🔹 ৫) Thread.sleep(3000)
+Thread.sleep(3000);
+
+
+শুধু async thread ৩ সেকেন্ড ঘুমায়
+
+Tomcat thread একদম ফাঁকা থাকে
+
+অন্য request নিতে পারে
+
+🔹 ৬) Database call
+var post = postService.getPostById(id);
+
+
+DB callও async thread-এ হয়
+
+Result রিটার্ন হয়
+
+🔹 ৭) Response client-এ যায়
+
+Spring আবার HTTP request resume করে
+
+Post object JSON বানিয়ে পাঠায়
+
+Client response পায়
+
+Thread ব্যবহার এক নজরে
+কোন জায়গা	কোন Thread
+Callable এর বাইরে	Tomcat thread
+call() এর ভিতরে	Async thread
+Thread.sleep()	Async thread
+DB call	Async thread
+কেন Callable ব্যবহার করব?
+
+✅ Tomcat thread ব্লক হয় না
+✅ Heavy request হলেও server ভালো পারফর্ম করে
+✅ ব্যবহার করা হয় যখন:
+
+Slow DB query
+
+External API call
+
+Long processing
+
+গুরুত্বপূর্ণ সতর্কতা
 
