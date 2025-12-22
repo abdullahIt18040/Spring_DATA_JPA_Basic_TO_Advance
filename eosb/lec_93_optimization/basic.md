@@ -104,3 +104,6 @@ spring.datasource.hikari.minimum-idle=5
      long et = System.currentTimeMillis();
        System.out.println("total time consume is ..................."+(et-st));ে
 ```
+## Repository Hierache :
+
+<img width="1432" height="972" alt="image" src="https://github.com/user-attachments/assets/2240aed3-2172-49e2-87a8-7ef66a478585" />
