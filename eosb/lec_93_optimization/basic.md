@@ -82,4 +82,25 @@ spring.datasource.hikari.maximum-pool-size=10
 spring.datasource.hikari.minimum-idle=5
 
 
-👉 সবসময় কমপক্ষে 5টা connection idle থাকবে
+👉 সবসময় কমপক্ষে 5টা connection idle থাকব
+```
+প্রতিটা Physical DB Connection তৈরি করতে অনেক সময় লাগে।
+এই সময় কমানোর জন্য HikariCP আগেই কিছু Physical Connection তৈরি করে রাখে (reserve করে)। 
+      var con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/sildb", (it take 48 ms for take a connection)
+               "postgres",
+               "1234");
+     var stm= con.createStatement();
+        long st = System.currentTimeMillis();
+     ResultSet rs = stm.executeQuery("select * from post");
+        while (rs.next()) {
+            System.out.println(
+                    "title is : " + rs.getString("title") +
+                            ", content is : " + rs.getString("content")
+            );
+        }
+
+        stm.close();
+     con.close();
+     long et = System.currentTimeMillis();
+       System.out.println("total time consume is ..................."+(et-st));ে
+```
