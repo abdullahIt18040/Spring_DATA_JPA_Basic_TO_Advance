@@ -1,3 +1,53 @@
+
+## Event-Driven Architecture (EDA) কী?
+```
+Event-Driven Architecture এমন একটি system design যেখানে—
+
+👉 কোনো service নিজে সব কাজ করে না
+👉 সে শুধু একটি event ঘটেছে বলে announce করে
+👉 অন্য service / component সেই event শুনে (listen করে) কাজ করে
+
+Event = “কিছু একটা ঘটেছে”
+
+উদাহরণ:
+
+OrderCreated
+
+PaymentCompleted
+
+UserRegistered
+
+🔹 Traditional (Tight Coupling) vs Event-Driven
+❌ Traditional (Bad for scale)
+Order Service
+   |
+   |-- call Email Service
+   |-- call Warehouse Service
+   |-- call Notification Service
+
+
+সমস্যা:
+
+Strong dependency
+
+একটাতে error হলে সব fail
+
+Code messy
+
+✅ Event-Driven (Best Practice)
+Order Service
+   |
+   |-- publish OrderCreatedEvent
+          |
+          |-- Email Listener
+          |-- Warehouse Listener
+          |-- Notification Listener
+
+
+👉 Loose coupling
+👉 Easy to scale
+👉 Easy to add new feature
+```
 ## Transaction Synchronization কী?
 transaction principle is 1. single responsible 
                           2.  open close principle(open for extension but close for modification)
