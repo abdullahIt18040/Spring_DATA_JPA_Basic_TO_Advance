@@ -1,4 +1,6 @@
 ## Transaction Synchronization কী?
+transaction principle is 1. single responsible 
+                          2.  open close principle(open for extension but close for modification)
 
 Transaction Synchronization মানে হলো
 👉 Transaction চলাকালীন বা Transaction শেষ হওয়ার আগে/পরে কিছু নির্দিষ্ট কাজ (callback) execute করা।
