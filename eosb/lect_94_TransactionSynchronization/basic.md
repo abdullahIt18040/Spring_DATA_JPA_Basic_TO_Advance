@@ -116,3 +116,148 @@ public MyOrder createMyOrder(MyOrder myOrder) throws InterruptedException {
 ```
 to avoid this problem we are used transaction synchronization .
 
+## ApplicationEventPublisher কী?
+
+ApplicationEventPublisher হলো Spring এর event system।
+
+👉 এটা দিয়ে আপনি কোনো event publish করেন
+👉 অন্য class গুলো সেই event listen করে কাজ করে
+
+মানে:
+```
+Order service → শুধু order তৈরি করবে
+
+Email / Warehouse / Notification → event শুনে কাজ করবে
+
+👉 Loose coupling তৈরি হয় (best design)
+
+🔹 Step-by-Step Execution (Transaction সহ)
+1️⃣ Method call
+createMyOrder()
+
+
+Spring transaction শুরু করে।
+
+2️⃣ Order save
+MyOrder order = myOrderRepos.save(myOrder);
+
+
+Order DB তে save হয়
+
+⚠️ এখনো commit হয়নি
+
+Transaction active
+
+3️⃣ Event publish
+eventPublisher.publishEvent(new OrderCreatedEvent(order));
+
+
+👉 এখানে খুব গুরুত্বপূর্ণ বিষয় আছে ❗
+
+❓ Event কখন handle হবে?
+
+By default:
+
+Event সাথে সাথেই publish হয়
+
+Listener transaction এর ভিতরেই execute হয়
+
+🔴 Problem (Default Behavior)
+
+ধরি:
+
+Listener এ email পাঠানো হচ্ছে
+
+Email পাঠাতে error হলো
+
+Listener exception throw করলো
+
+👉 তাহলে:
+
+পুরো transaction ROLLBACK হবে
+
+Order save হবে না ❌
+
+🔹 Correct Way: AFTER_COMMIT Event 🔥
+
+👉 Order commit হওয়ার পরেই event handle হওয়া উচিত
+
+Listener example:
+@Component
+public class OrderEventListener {
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleOrderCreated(OrderCreatedEvent event) {
+
+        System.out.println("Handling event AFTER COMMIT");
+
+        // email / notification / kafka
+    }
+}
+
+🔹 Final Flow (Best Practice)
+Transaction START
+   |
+   |-- Order Save
+   |-- Event Publish (queued)
+   |
+Transaction COMMIT
+   |
+   |-- Event Listener Execute
+
+
+👉 যদি transaction rollback হয়
+👉 Event execute হবে না
+```
+## MY CODE  IS:
+```
+
+@Transactional
+public MyOrder createMyOrder(MyOrder myOrder) throws InterruptedException {
+    System.out.println("order place by "+Thread.currentThread().getName());
+  MyOrder order= myOrderRepos.save(myOrder);
+   eventPublisher.publishEvent(new OrderCreatedEvent(order));
+
+
+    return order;
+
+}
+
+
+LISTENSER IS
+@Component
+@RequiredArgsConstructor
+public class EmailNotificationListener{
+
+    private final EmailService emailService;
+  @TransactionalEventListener(value = OrderCreatedEvent.class,phase = TransactionPhase.AFTER_COMMIT)
+    public void handleCreateEventInformNotify(OrderCreatedEvent event) throws InterruptedException {
+
+       var order= event.order();
+        EmailRequest emailRequest = new EmailRequest(order.getEmail(),"",
+                "order created successfully it is inform from eventlistener");
+     emailService.sendEmail(emailRequest);
+     Thread.sleep(3000);
+      System.out.println("event listener is called");
+
+    }
+
+}
+@Component
+@RequiredArgsConstructor
+public class WareHouseNotificationListener {
+    private final WareHouseService wareHouseService;
+
+    @TransactionalEventListener(value = OrderCreatedEvent.class,phase = TransactionPhase.AFTER_COMMIT)
+    public void handleWareHouseNotification(OrderCreatedEvent orderCreatedEvent)
+    {
+        var order=orderCreatedEvent.order();
+        wareHouseService.notifyToWareHouse(order.getId());
+        System.out.println("wareHousenotification is working now man ;;;;;;;;");
+
+    }
+}
+```
+
+
+
