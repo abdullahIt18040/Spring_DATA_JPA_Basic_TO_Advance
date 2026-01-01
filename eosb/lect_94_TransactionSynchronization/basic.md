@@ -258,6 +258,128 @@ public class WareHouseNotificationListener {
     }
 }
 ```
+## above task maintain  transactionsynchronizer 
+## TransactionSynchronizationManager কী?
+
+TransactionSynchronizationManager হলো Spring এর low-level core class
+যা—
+
+👉 বর্তমান thread-এর সাথে transaction সম্পর্কিত তথ্য bind করে রাখে
+👉 Transaction lifecycle অনুযায়ী callback execute করতে দেয়
+```
+সহজ ভাষায়:
+Transaction এর ভেতরে “আগে / পরে” কিছু কাজ করার controller
+
+🔹 Spring ভিতরে কীভাবে ব্যবহার হয়?
+
+Spring internally এই class ব্যবহার করে—
+
+@Transactional
+
+@TransactionalEventListener
+
+@EventListener
+
+Resource binding (EntityManager, Connection)
+
+👉 আপনি যেগুলো ব্যবহার করছেন (event listener),
+সবকিছুর নিচে কাজ করছে TransactionSynchronizationManager
+
+🔹 TransactionSynchronizationManager কী কী manage করে?
+1️⃣ Transaction active কিনা
+TransactionSynchronizationManager.isActualTransactionActive();
+
+2️⃣ Thread-bound resource
+
+JDBC Connection
+
+Hibernate Session / EntityManager
+
+3️⃣ Transaction synchronization register করা
+
+Commit এর পরে
+
+Rollback এর পরে
+
+🔹 Real Simple Example (Manual)
+@Transactional
+public void createOrder() {
+
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+
+            @Override
+            public void afterCommit() {
+                System.out.println("Transaction committed");
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    System.out.println("Transaction rolled back");
+                }
+            }
+        }
+    );
+
+    // DB operation
+}
 
 
+👉 এইটাই low-level version
+👉 @TransactionalEventListener internally এটা use করে
+
+🔹 আপনার Case এর সাথে Connection
+
+আপনি লিখেছেন:
+
+eventPublisher.publishEvent(new OrderCreatedEvent(order));
+
+
+এবং listener এ:
+
+@TransactionalEventListener(phase = AFTER_COMMIT)
+
+Internally কী হয়?
+
+1️⃣ Event publish
+2️⃣ Spring দেখে → Transaction active
+3️⃣ Event কে TransactionSynchronizationManager এ register করে
+4️⃣ Transaction commit হলে → listener execute
+5️⃣ Rollback হলে → skip / rollback listener execute
+
+🔹 Thread-Bound Concept 🧵
+System.out.println(Thread.currentThread().getName());
+
+
+👉 Transaction + Synchronization সব একই thread এ bound
+👉 Thread change হলে (new thread) transaction আর থাকবে না
+
+🔹 Important Methods (Interview)
+Method	কাজ
+isSynchronizationActive()	Synchronization active কিনা
+isActualTransactionActive()	Transaction চলছে কিনা
+bindResource()	Resource bind
+unbindResource()	Resource unbind
+registerSynchronization()	Callback register
+🔹 Open Session in View এর সাথে Relation
+
+OpenEntityManagerInViewFilter ব্যবহার করে:
+
+EntityManager thread এ bind থাকে
+
+TransactionSynchronizationManager এর মাধ্যমে
+
+🔹 কখন Directly ব্যবহার করবেন?
+
+✔️ Custom framework
+✔️ Low-level infrastructure code
+✔️ Advanced transaction control
+
+❌ Normal business service এ direct ব্যবহার না করাই ভালো
+
+🔹 Interview One-Line Answer 🎯
+
+👉 TransactionSynchronizationManager Spring এর core class যা transaction lifecycle অনুযায়ী callback এবং resource manage করে।
+```
 
