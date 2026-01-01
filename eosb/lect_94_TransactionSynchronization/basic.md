@@ -1,8 +1,8 @@
-Transaction Synchronization কী?
+## Transaction Synchronization কী?
 
 Transaction Synchronization মানে হলো
 👉 Transaction চলাকালীন বা Transaction শেষ হওয়ার আগে/পরে কিছু নির্দিষ্ট কাজ (callback) execute করা।
-
+```
 Spring আমাদের কিছু hook point দেয়, যেমনঃ
 
 Transaction শুরু হলে
@@ -40,3 +40,58 @@ Transaction শেষ হলে
 3️⃣ তারপর Customer কে Notification পাঠানো হবে
 
 ❗ যদি Order save করার সময় error হয় → transaction rollback হবে → notification পাঠানো যাবে না
+```
+## code
+```
+@Transactional
+public MyOrder createMyOrder(MyOrder myOrder) throws InterruptedException {
+    System.out.println("order place by "+Thread.currentThread().getName());
+  MyOrder order= myOrderRepos.save(myOrder);
+    EmailRequest emailRequest = new EmailRequest("abdullah@gamil.com","demy email",
+            "this is email body");
+    //notify
+//      EmailRequest emailRequest1 = new EmailRequest("","","");
+   try {
+     emailService.sendEmail(emailRequest);
+   }catch (Exception e)
+   {
+     e.printStackTrace();
+   }
+
+    System.out.println("order created ...........................");
+//    if (1==1)
+//        throw new RuntimeException("ERROR OCCURED ............................");
+    return order;
+
+}
+  @Async
+    public void sendEmail(EmailRequest request) throws InterruptedException {
+        System.out.println(" EMAIL send by  "+Thread.currentThread().getName());
+
+
+        Thread.sleep(3000);
+        System.out.println("email sending successfully .....................");
+
+        throw new RuntimeException("error occured email not sending............");
+//        try {
+//            MimeMessage message = mailSender.createMimeMessage();
+//            MimeMessageHelper helper =
+//                    new MimeMessageHelper(message, false, "UTF-8");
+//
+//            helper.setTo(request.getTo());
+//            helper.setSubject(request.getSubject());
+//            helper.setText(request.getBody(), true); // HTML enabled
+//            helper.setFrom("no-reply@yourcompany.com");
+//
+//            mailSender.send(message);
+//
+//            log.info("Email sent successfully to {}", request.getTo());
+//
+//        } catch (Exception ex) {
+//            log.error("Failed to send email to {}", request.getTo(), ex);
+//            throw new EmailSendException("Email sending failed");
+//        }
+
+    }
+}
+```
