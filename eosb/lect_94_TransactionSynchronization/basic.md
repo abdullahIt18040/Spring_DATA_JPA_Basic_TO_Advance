@@ -97,3 +97,22 @@ public MyOrder createMyOrder(MyOrder myOrder) throws InterruptedException {
     }
 }
 ```
+## if we execute all task into a single method.it will break solid principle like
+```
+@Transactional
+public MyOrder createMyOrder(MyOrder myOrder) throws InterruptedException {
+    System.out.println("order place by "+Thread.currentThread().getName());
+  MyOrder order= myOrderRepos.save(myOrder);
+    EmailRequest emailRequest = new EmailRequest("abdullah@gamil.com","demy email",
+            "this is email body");
+
+     emailService.sendEmail(emailRequest);
+     wareHouseService.notifyToWareHouse(order.getId());
+
+
+    return order;
+
+}
+```
+to avoid this problem we are used transaction synchronization .
+
