@@ -164,3 +164,45 @@ status parameter এখন log এ ব্যবহার হচ্ছে না
 transaction object delete হয় না
 
 শুধু Map entry delete হয়
+
+## to measure time : 
+
+```
+@Slf4j
+@Controller
+public class AuditListener implements TransactionExecutionListener {
+    record TxInfo(String name,long start)
+    {}
+
+
+    private final Map<Integer,TxInfo>map = new ConcurrentHashMap<>();
+  public  void beforeBegin(TransactionExecution transaction) {
+      var txInfo = new   TxInfo(transaction.getTransactionName(),System.currentTimeMillis());
+      map.put(transaction.hashCode(),txInfo);
+
+    }
+
+
+     public void afterCommit(TransactionExecution transaction, @Nullable Throwable commitFailure) {
+      printLog(transaction,"committed");
+    }
+
+
+
+     public void afterRollback(TransactionExecution transaction, @Nullable Throwable rollbackFailure) {
+       printLog(transaction,"rollback");
+    }
+    private  void printLog(TransactionExecution transaction, String status)
+    {
+
+        TxInfo txInfo =map.remove(transaction.hashCode());
+        if(txInfo != null)
+        {
+            log.warn("transaction : {} taken total {} ms",txInfo.name,(System.currentTimeMillis()-txInfo.start()));
+        }
+
+
+    }
+
+}
+```
