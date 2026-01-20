@@ -35,6 +35,7 @@ JtaTransactionManager
 ```
 ## Distributed Transaction কীভাবে Globally Manage করা হয় — সহজ বাংলায়
 
+```
 Distributed Transaction মানে এমন একটি transaction
 যা একাধিক service / database / resource জুড়ে কাজ করে
 এবং সবগুলোকে একসাথে commit বা rollback করাতে হয়।
@@ -150,4 +151,111 @@ Complexity	Config-heavy	Logic-heavy
 
 ✅ Microservice / Cloud
 → Saga Pattern
+```
+## Distributed System-এ কেন JTA ব্যবহার করা হয় (বাংলায় ব্যাখ
+```
+Distributed system-এ যখন একাধিক system / service / database একসাথে একটি transaction manage করে, তখন আমরা JTA (Java Transaction API) ব্যবহার করি।
+
+সমস্যা কী?
+
+ধরুন:
+
+এক service-এ Order save
+
+আরেক service-এ Payment cut
+
+এগুলো আলাদা আলাদা system।
+
+যদি:
+
+Order save হয়ে যায় ✅
+
+Payment fail হয় ❌
+
+➡️ তাহলে data inconsistent হয়ে যাবে।
+
+JTA কী করে?
+
+JTA নিশ্চিত করে:
+
+সব system একসাথে সফল হবে, নাহলে সব system একসাথে rollback হবে
+
+এটাই Distributed Transaction Management।
+
+JTA কিভাবে কাজ করে? (Two-Phase Commit – 2PC)
+Phase 1: Prepare Phase
+
+Transaction Manager সব system-কে জিজ্ঞেস করে:
+
+“তুমি কি commit করতে ready?”
+
+Database A → YES
+
+Database B → YES / NO
+
+Phase 2: Commit / Rollback Phase
+
+যদি সবাই YES দেয় → সব জায়গায় commit
+
+যদি একজনও NO দেয় → সব জায়গায় rollback
+
+JTA-র মূল Components
+
+Transaction Manager
+
+পুরো transaction control করে
+
+Resource Manager
+
+Database, Message Queue ইত্যাদি
+
+XA Protocol
+
+Distributed coordination এর জন্য
+
+বাস্তব উদাহরণ
+Order Service  → MySQL Database
+Payment Service → Oracle Database
+
+
+Order + Payment = এক transaction
+
+Payment fail হলে → Order rollback
+
+JTA এটা নিশ্চিত করে
+
+কোথায় JTA ব্যবহার করা হয়?
+
+✔ Monolithic বা Enterprise Application
+✔ Multiple Database transaction
+✔ Bank / Financial System
+
+কখন JTA ব্যবহার করা উচিত না?
+
+❌ Microservices architecture
+❌ High scalability দরকার হলে
+❌ Long-running transaction
+
+এক্ষেত্রে ব্যবহার করা হয়:
+➡️ Saga Pattern (Eventual Consistency)
+
+জনপ্রিয় JTA Implementation
+
+Narayana (JBoss)
+
+Atomikos
+
+Bitronix
+
+সংক্ষেপে
+
+JTA = Distributed Transaction Management
+
+Multiple system এক transaction-এ কাজ করলে ব্যবহার হয়
+
+ACID property বজায় রাখে
+
+Two-Phase Commit ব্যবহার করে
+
+চাও তো আমি এটা diagram দিয়ে, অথবা JTA vs Saga comparison-ও বাংলায় বুঝিয়ে দিতে পারি।
 ```
