@@ -33,6 +33,119 @@ JtaTransactionManager
 @Transactional ব্যবহার করলে Spring ভিতরে ভিতরে এই ক্লাস দিয়েই transaction পরিচালনা করে
 
 ```
+## JTA কি?
+```
+JTA হলো Java এর একটি API, যা বিভিন্ন Resource (DB, JMS Queue ইত্যাদি) কে একসাথে ট্রানজেকশন হিসেবে ম্যানেজ করতে দেয়।
+
+উদ্দেশ্য: Distributed Transaction support – একাধিক Resource একসাথে commit বা rollback করা।
+
+মূল অংশ
+
+UserTransaction – ট্রানজেকশন শুরু, commit বা rollback।
+
+TransactionManager – Resource গুলোর মধ্যে ট্রানজেকশন ম্যানেজ করে, 2-Phase Commit (2PC) নিশ্চিত করে।
+
+XAResource – Distributed Resource যা 2PC সমর্থন করে।
+
+Spring Boot এ ব্যবহার
+
+একাধিক DB বা DB + Messaging transaction করার জন্য JTA provider ব্যবহার হয় (যেমন Atomikos, Bitronix)।
+
+Example:
+
+userTransaction.begin();
+try {
+    accountRepo1.debit(fromAcc, amount);
+    accountRepo2.credit(toAcc, amount);
+    userTransaction.commit();
+} catch(Exception e) {
+    userTransaction.rollback();
+}
+```
+
+### ১. Resource কি?
+```
+
+Resource বলতে সাধারণত কোনো transactional-able সিস্টেম বা ডেটা সোর্স বোঝায়, যা JTA ট্রানজেকশন দ্বারা ম্যানেজ করা যায়।
+
+যেমন: Database, JMS Queue, Message Broker ইত্যাদি।
+
+JTA ট্রানজেকশন একাধিক Resource কে একসাথে এক ট্রানজেকশনে ম্যানেজ করতে পারে।
+
+উদাহরণ:
+
+একটি অ্যাপ্লিকেশন একই সময়ে MySQL ডেটাবেস এবং Kafka Queue-তে ডেটা আপডেট করতে চায়।
+
+MySQL এবং Kafka উভয়ই Resource।
+
+নোট: Resource যদি XA সামর্থ্য না রাখে, তাহলে একাধিক Resource সহ distributed transaction করা যায় না।
+
+২. XAResource কি?
+
+XAResource হলো এক ধরনের Resource যা Distributed Transaction বা Two-Phase Commit (2PC) সাপোর্ট করে।
+
+Key Points:
+
+Distributed Transaction: যখন একটি ট্রানজেকশন একাধিক Resource (যেমন, দুইটি আলাদা ডেটাবেস) আপডেট করতে চায়।
+
+Two-Phase Commit (2PC):
+
+Phase 1: Prepare – সমস্ত Resource কে “ready to commit” করতে বলা হয়।
+
+Phase 2: Commit – যদি সব Resource ঠিক থাকে, তাহলে commit করা হয়। না হলে rollback।
+
+XAResource 2PC কে বাস্তবায়ন করার জন্য JTA এর সাথে কাজ করে।
+
+উদাহরণ:
+
+App wants to update DB1 and DB2 in one transaction:
+
+DB1 এবং DB2 উভয়ই XAResource হতে হবে।
+
+Spring Boot JTA Controller বা Service ট্রানজেকশন শুরু করে।
+
+XAResource 2PC মাধ্যমে নিশ্চিত করে যে উভয় DB commit হবে না হলে rollback হবে।
+
+৩. Spring Boot এ Resource & XAResource ব্যবহারের উদাহরণ
+৩.১. Database Resource (non-XA)
+@Bean
+public DataSource dataSource() {
+    HikariDataSource ds = new HikariDataSource();
+    ds.setJdbcUrl("jdbc:mysql://localhost:3306/mydb");
+    ds.setUsername("root");
+    ds.setPassword("password");
+    return ds; // normal Resource, not XA
+}
+
+৩.২. XAResource Database (JTA)
+
+Spring Boot + Atomikos / Bitronix ব্যবহার করে:
+
+@Bean(initMethod = "init", destroyMethod = "close")
+public DataSource xaDataSource() {
+    AtomikosDataSourceBean xaDs = new AtomikosDataSourceBean();
+    xaDs.setUniqueResourceName("xaDb");
+    xaDs.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
+    xaDs.setXaProperties(xaProperties());
+    return xaDs; // XAResource
+}
+
+private Properties xaProperties() {
+    Properties props = new Properties();
+    props.setProperty("user", "root");
+    props.setProperty("password", "password");
+    props.setProperty("URL", "jdbc:mysql://localhost:3306/mydb");
+    return props;
+}
+
+
+ব্যাখ্যা:
+
+DataSource → সাধারণ Resource
+
+AtomikosDataSourceBean + MysqlXADataSource → XAResource
+
+```
 ## Distributed Transaction কীভাবে Globally Manage করা হয় — সহজ বাংলায়
 
 ```
