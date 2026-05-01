@@ -18,6 +18,7 @@ Apache Tomcat হলো একটি Java Web Server + Servlet Container, যা
 Browser থেকে request নেয় → Java code চালায় → response পাঠায়
 
 ## distributed cash in macharnism 
+```
 “Distributed caching mechanism” শুনতে জটিল লাগলেও ধারণাটা খুব straightforward—
 👉 একাধিক server/app একসাথে একই cache share করে, যাতে data দ্রুত পাওয়া যায়
 
@@ -70,7 +71,7 @@ Client request দেয়
 App → cache check করে
 যদি cache-এ থাকে → direct return ✅
 না থাকলে → DB থেকে নেয় → cache-এ রাখে
-
+```
 radis 
 <img width="1076" height="601" alt="image" src="https://github.com/user-attachments/assets/70a7489b-d08a-4e1f-9295-1fe88130d1fc" />
 
