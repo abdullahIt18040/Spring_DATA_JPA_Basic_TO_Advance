@@ -75,4 +75,59 @@ App → cache check করে
 radis 
 <img width="1076" height="601" alt="image" src="https://github.com/user-attachments/assets/70a7489b-d08a-4e1f-9295-1fe88130d1fc" />
 
+## cash Aside Pattern:
+```
+Cache Aside Pattern কী?
+
+👉 Application নিজে cache control করে
+👉 আগে cache check করে, না থাকলে DB থেকে এনে cache-এ রাখে
+
+🔹 কীভাবে কাজ করে (Step-by-step)
+1. Request আসে
+2. Cache check
+   → Data থাকলে → return ✅
+   → না থাকলে → DB call
+3. DB থেকে data এনে
+4. Cache-এ save করে
+5. Response return
+🔹 Flow Diagram
+Client
+  ↓
+Application
+  ↓
+Cache (Redis)
+  ↓ (miss হলে)
+Database
+🔹 Example (Spring Boot)
+
+ধরো তুমি Redis ব্যবহার করছো:
+
+@Cacheable("users")
+public User getUser(Long id) {
+    return userRepository.findById(id).orElse(null);
+}
+
+👉 First call:
+
+Cache miss ❌ → DB call → Cache save
+
+👉 Second call:
+
+Cache hit ✅ → Direct return
+🔹 Update হলে কী হবে? (Important)
+
+👉 Cache Aside এ update manually handle করতে হয়
+
+@CacheEvict(value = "users", key = "#id")
+public void updateUser(Long id, User user) {
+    userRepository.save(user);
+}
+
+👉 মানে:
+
+আগে DB update
+তারপর cache clear (evict)
+```
+
+
 
