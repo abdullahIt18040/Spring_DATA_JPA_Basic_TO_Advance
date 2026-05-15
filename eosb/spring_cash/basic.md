@@ -129,9 +129,31 @@ public void updateUser(Long id, User user) {
 তারপর cache clear (evict)
 ```
 
-Spring Cash: 
+## Spring Cash: 
 MAP of MAP: product key value map which contain key object value object .
 
 <img width="1130" height="605" alt="image" src="https://github.com/user-attachments/assets/65df632b-12a0-47d0-88e2-21f7e774165b" />
 
+## SPEL
+```
+SPeL এর পূর্ণরূপ হলো Spring Expression Language।
+এটি Spring Framework এর একটি powerful expression language, যেটা দিয়ে runtime এ object এর value read, modify, method call, condition check ইত্যাদি করা যায়।
 
+কেন SPeL ব্যবহার করা হয়?
+
+SPeL ব্যবহার করা হয় যখন dynamic ভাবে value evaluate করতে হয়।
+
+যেমন:
+
+property access করা
+method call করা
+condition check করা
+bean access করা
+collection filter করা
+Basic Syntax
+#{expression}
+
+বা annotation এর ভিতরে:
+
+@Value("#{expression}")
+```
