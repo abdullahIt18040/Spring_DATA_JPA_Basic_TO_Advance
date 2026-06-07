@@ -157,3 +157,135 @@ Basic Syntax
 
 @Value("#{expression}")
 ```
+## Unless and condition 
+```
+unless Redis caching এ ব্যবহার করা হয় method execute হওয়ার পরে decide করার জন্য যে result cache এ রাখা হবে কি না।
+
+তোমার comment টা একদম ঠিক:
+
+// condition -> evaluated before method invoke
+// unless -> evaluated after method invoke
+
+এখন সহজভাবে বুঝি।
+
+condition vs unless
+বিষয়	condition	unless
+কখন check হয়	Method call এর আগে	Method call এর পরে
+কী check করে	method run হবে/cache use হবে কি না	result cache এ save হবে কি না
+result access করতে পারে?	না	হ্যাঁ (#result)
+unless কেন ব্যবহার করা হয়?
+
+অনেক সময় method execute হবে, কিন্তু সব result cache করতে চাই না।
+
+যেমন:
+
+null data cache করতে চাই না
+empty list cache করতে চাই না
+admin user এর data cache করতে চাই না
+বড় object cache করতে চাই না
+
+এগুলোর জন্য unless ব্যবহার হয়।
+
+Example 1: null হলে cache করবে না
+@Cacheable(
+    cacheNames = "product",
+    key = "#id",
+    unless = "#result == null"
+)
+public Product getProduct(Integer id) {
+    return productRepos.findById(id).orElse(null);
+}
+
+এখানে:
+
+method execute হবে
+result আসবে
+যদি result null হয় → cache করবে না
+null না হলে → cache করবে
+Example 2: Admin হলে cache করবে না
+@Cacheable(
+    cacheNames = "product",
+    key = "#id",
+    unless = "#result.price > 10000"
+)
+
+যদি product price 10000 এর বেশি হয় → cache হবে না।
+
+তোমার কোডে কোথায় useful?
+
+তুমি CacheLogic class বানিয়েছো:
+
+class CacheLogic{
+    public boolean isCacheable(){
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        return auth.getAuthorities()
+                .stream()
+                .anyMatch(a -> !"ROLE_ADMIN".equals(a.getAuthority()));
+    }
+}
+
+এখানে তুমি বলতে চাচ্ছো:
+
+Admin হলে cache use করবে না
+Normal user হলে cache করবে
+
+এটা condition দিয়েও করা যায়:
+
+@Cacheable(
+    cacheNames = "product",
+    key = "#id",
+    condition = "@cacheLogic.isCacheable()"
+)
+
+এখানে:
+
+method call এর আগেই check হবে
+admin হলে cache use হবে না
+কিন্তু unless হলে কী হতো?
+@Cacheable(
+    cacheNames = "product",
+    key = "#id",
+    unless = "#result == null"
+)
+
+এখানে:
+
+আগে method execute হবে
+পরে result দেখে decide করবে cache save করবে কি না
+খুব সহজে মনে রাখো
+condition
+
+👉 "Method execute করার আগেই check করো"
+
+unless
+
+👉 "Result পাওয়ার পরে check করো"
+
+Flow Diagram
+condition
+Request
+   ↓
+Condition check
+   ↓
+true হলে cache use
+false হলে cache skip
+unless
+Request
+   ↓
+Method execute
+   ↓
+Result পাওয়া গেল
+   ↓
+Unless check
+   ↓
+false → cache save
+true → cache save না
+Real-life Use Case
+
+সবচেয়ে common:
+
+unless = "#result == null"
+
+কারণ null cache করলে পরে real data আসলেও সমস্যা হতে পারে।
+```
