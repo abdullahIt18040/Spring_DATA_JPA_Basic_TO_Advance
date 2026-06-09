@@ -156,3 +156,174 @@ Stale cache
 
 ব্যবহার করা হয়।
 ```
+### @Cacheable(sync = true) Redis cache এ same data একসাথে অনেক request আসলে duplicate DB call বন্ধ করার জন্য ব্যবহার করা হয়।
+```
+তোমার code:
+
+@Cacheable(
+    sync = true,
+    cacheNames = "product",
+    key = "#id",
+    cacheResolver = "sdlcProCacheResolver"
+)
+public Product fetchProductById(Integer id) {
+
+    return productRepos.findById(id).orElseThrow();
+}
+
+এখানে sync = true কী করে সেটা step by step দেখি।
+
+sync = false (default behavior)
+
+ধরো Redis এ product:1 cache নাই।
+
+একই সময় 100 user call দিল:
+
+fetchProductById(1)
+
+তখন কী হবে?
+
+সব request একসাথে DB তে যাবে।
+
+মানে:
+
+SELECT * FROM product WHERE id=1
+
+100 বার execute হতে পারে।
+
+এটাকে বলে:
+
+Cache Stampede
+Cache Breakdown
+
+এতে:
+
+DB load বেড়ে যায়
+Performance কমে যায়
+sync = true behavior
+
+এখন sync = true দিলে কী হয়?
+
+প্রথম request:
+
+cache miss পেল
+lock নিল
+DB call করল
+Redis এ data save করল
+
+অন্য 99 request:
+
+wait করবে
+DB তে যাবে না
+
+যখন প্রথম request cache fill করবে,
+তখন বাকিরা cache থেকে data পাবে।
+
+Simple Flow
+
+Without sync:
+
+100 request
+   ↓
+100 DB query
+
+With sync=true:
+
+100 request
+   ↓
+1 DB query
+   ↓
+99 request cache থেকে data নেয়
+কেন useful
+
+এটা খুব useful যখন:
+
+heavy DB query
+expensive API call
+high traffic system
+cache expiry এর পর sudden traffic
+Important Note
+
+sync = true works:
+
+per cache key
+JVM level locking
+
+মানে:
+
+fetchProductById(1)
+
+এর জন্য আলাদা lock।
+
+আর:
+
+fetchProductById(2)
+
+এর জন্য আলাদা lock।
+
+Real Example
+
+ধরো:
+
+@Cacheable(sync = true)
+public Product getProduct(1)
+
+Redis empty।
+
+একই সময়ে:
+
+User A
+User B
+User C
+
+call দিল।
+
+তখন:
+
+User	Action
+A	DB hit
+B	Wait
+C	Wait
+
+তারপর:
+
+User	Result
+A	Cache save
+B	Cache hit
+C	Cache hit
+Redis এর সাথে relation
+
+sync=true নিজে Redis feature না।
+
+এটা Spring Cache abstraction feature।
+
+Spring internally synchronization handle করে যাতে:
+
+same key এর multiple thread
+same time DB hit না করে
+Limitation
+
+Important:
+
+sync = true distributed lock না।
+
+মানে multiple server থাকলে:
+
+Server A
+Server B
+
+দুই server আলাদা lock maintain করবে।
+
+তখন:
+
+A DB hit করতে পারে
+B ও DB hit করতে পারে
+
+Distributed environment এ:
+
+Redis Lock
+Redisson
+Distributed Mutex
+
+লাগতে পারে।
+```
