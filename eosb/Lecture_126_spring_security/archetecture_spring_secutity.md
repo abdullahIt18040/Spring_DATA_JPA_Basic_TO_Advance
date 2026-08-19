@@ -170,3 +170,76 @@ Security Filter Chain
         ↓
 Authentication + Authorization
 ```
+### Servlet Container vs IoC Container
+```
+1. Servlet Container
+
+Servlet Container হলো এমন একটি runtime environment যা HTTP request, response, Servlet এবং Filter manage করে।
+
+Example:
+
+Tomcat
+Jetty
+Undertow
+Client
+  ↓
+Tomcat (Servlet Container)
+  ↓
+Filter
+  ↓
+DispatcherServlet
+  ↓
+Controller
+
+Main responsibilities:
+
+HTTP Request/Response
+Servlet lifecycle
+Filter management
+Request handling
+2. IoC Container
+
+IoC = Inversion of Control
+
+Spring IoC Container Java Objects/Beans তৈরি, manage এবং dependency injection করে।
+
+Example:
+
+ApplicationContext
+       ↓
+@Service
+@Repository
+@Controller
+@Component
+
+Spring-এর প্রধান IoC Container হলো:
+
+ApplicationContext
+Difference
+Servlet Container	IoC Container
+Tomcat	Spring ApplicationContext
+HTTP request manage করে	Spring Bean manage করে
+Servlet/Filter manage করে	Dependency Injection করে
+Web lifecycle manage করে	Object lifecycle manage করে
+Spring Security Connection
+HTTP Request
+     ↓
+Tomcat
+(Servlet Container)
+     ↓
+DelegatingFilterProxy
+     ↓
+FilterChainProxy
+     ↓
+Security Filters
+     ↓
+DispatcherServlet
+     ↓
+Controller
+
+Key Point:
+
+Servlet Container → Web request, Servlet, Filter manage করে।
+IoC Container → Spring Bean এবং Dependency manage করে।
+DelegatingFilterProxy → Servlet Container এবং Spring Security-এর মধ্যে bridge।
+```
