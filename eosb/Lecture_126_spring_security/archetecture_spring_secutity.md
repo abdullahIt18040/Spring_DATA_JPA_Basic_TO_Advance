@@ -213,15 +213,19 @@ ApplicationContext
 @Component
 
 Spring-এর প্রধান IoC Container হলো:
-
-ApplicationContext
+```
+## ApplicationContext
+```
 Difference
 Servlet Container	IoC Container
 Tomcat	Spring ApplicationContext
 HTTP request manage করে	Spring Bean manage করে
 Servlet/Filter manage করে	Dependency Injection করে
 Web lifecycle manage করে	Object lifecycle manage করে
-Spring Security Connection
+```
+
+### Spring Security Connection
+```
 HTTP Request
      ↓
 Tomcat
