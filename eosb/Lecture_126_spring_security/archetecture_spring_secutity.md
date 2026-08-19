@@ -42,3 +42,131 @@ BearerTokenAuthenticationFilter
 AnonymousAuthenticationFilter
 AuthorizationFilter
 ```
+## DelegatingFilterProxy হলো Spring-এর একটি Servlet Filter, যেটা নিজে মূল security কাজ করে না। এটি request-কে Spring-এর ApplicationContext-এর একটি bean/filter-এর কাছে delegate করে।
+
+সহজভাবে:
+
+DelegatingFilterProxy = Servlet container এবং Spring Security-এর মধ্যে bridge
+```
+Flow
+Browser / Client
+      ↓
+Tomcat
+      ↓
+DelegatingFilterProxy
+      ↓
+FilterChainProxy
+      ↓
+Spring Security Filters
+      ↓
+DispatcherServlet
+      ↓
+Controller
+কেন দরকার?
+
+Tomcat সরাসরি Spring Bean সম্পর্কে জানে না।
+
+Tomcat জানে:
+
+Servlet
+Filter
+Listener
+
+অন্যদিকে Spring জানে:
+
+@Service
+@Component
+@Bean
+
+তাই DelegatingFilterProxy এই দুইটার মধ্যে connection তৈরি করে।
+
+Tomcat
+  │
+  │ Servlet Filter
+  ↓
+DelegatingFilterProxy
+  │
+  │ delegate
+  ↓
+Spring ApplicationContext
+  │
+  ↓
+FilterChainProxy
+  │
+  ↓
+Security Filters
+DelegatingFilterProxy নিজে Authentication করে?
+
+না।
+
+এটি মূলত request-কে অন্য filter-এর কাছে পাঠায়।
+
+Spring Security-তে সেই গুরুত্বপূর্ণ filter হলো:
+
+FilterChainProxy
+
+FilterChainProxy আবার একাধিক Security Filter execute করে।
+
+যেমন:
+
+DelegatingFilterProxy
+        ↓
+FilterChainProxy
+        ↓
+UsernamePasswordAuthenticationFilter
+        ↓
+BearerTokenAuthenticationFilter
+        ↓
+AuthorizationFilter
+        ↓
+Controller
+একটি সহজ উদাহরণ
+
+ধরুন client request পাঠাল:
+
+GET /api/user
+Authorization: Bearer eyJ...
+
+তখন:
+
+1. Tomcat request receive করে
+
+GET /api/user
+
+2. DelegatingFilterProxy request পায়
+
+এটি বলে:
+
+"আমি security-এর কাজ নিজে করব না; Spring Security-এর filter-এর কাছে request পাঠাব।"
+
+3. FilterChainProxy request নেয়
+
+তারপর appropriate security filters চালায়।
+
+4. JWT filter JWT check করে
+
+JWT
+ ↓
+Validate
+ ↓
+Authentication
+ ↓
+SecurityContext
+
+5. Authorization check হয়
+
+User has required role?
+        ↓
+   Yes → Controller
+   No  → 403 Forbidden
+সবচেয়ে গুরুত্বপূর্ণ সম্পর্ক
+DelegatingFilterProxy
+        ↓
+     delegates
+        ↓
+FilterChainProxy
+        ↓
+Security Filter Chain
+        ↓
+Authentication + Authorization
+```
