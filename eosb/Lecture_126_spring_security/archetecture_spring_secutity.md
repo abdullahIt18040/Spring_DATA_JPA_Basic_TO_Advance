@@ -217,11 +217,11 @@ Spring-এর প্রধান IoC Container হলো:
 ## ApplicationContext
 ```
 Difference
-Servlet Container	IoC Container
-Tomcat	Spring ApplicationContext
-HTTP request manage করে	Spring Bean manage করে
-Servlet/Filter manage করে	Dependency Injection করে
-Web lifecycle manage করে	Object lifecycle manage করে
+Servlet Container                       	IoC Container
+Tomcat	                                  Spring ApplicationContext
+HTTP request manage করে         	           Spring Bean manage করে
+Servlet/Filter manage করে	                 Dependency Injection করে
+Web lifecycle manage করে	                 Object lifecycle manage করে
 ```
 
 ### Spring Security Connection
