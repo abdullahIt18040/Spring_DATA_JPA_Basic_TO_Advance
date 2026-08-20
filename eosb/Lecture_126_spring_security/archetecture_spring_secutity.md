@@ -267,9 +267,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 public class SecurityConfig {
+    private final RateLimitFilter rateLimitFilter = new RateLimitFilter();
     @Bean
     public SecurityFilterChain defaultFilterChain() {
         return new SecurityFilterChain() {
@@ -282,7 +285,8 @@ public class SecurityConfig {
             @Override
             public List<Filter> getFilters() {
                 return List.of(new ApiKeyFilter(),
-                        new simpleFilter());
+                        new simpleFilter(),
+                        rateLimitFilter);
             }
         };
     }
@@ -336,6 +340,47 @@ public class SecurityConfig {
 
         }
     }
+    static class RateLimitFilter extends OncePerRequestFilter{
+          private static final int MaxRequest  = 5;
+        private final Map<String, Integer> requestCounter = new ConcurrentHashMap<>();
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        FilterChain filterChain) throws ServletException, IOException {
+
+            String clientIp = request.getRemoteAddr();
+
+          int count=  requestCounter.merge(clientIp,1,Integer::sum);
+
+            System.out.println(
+                    "RateLimitFilter: "
+                            + clientIp
+                            + " -> "
+                            + count
+            );
+
+            if(count>MaxRequest)
+            {
+                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                response.getWriter().println("""
+                    {
+                        "status": 429,
+                        "error": "TOO_MANY_REQUESTS",
+                        "message": "Too many requests. Please try again later."
+                    }
+                    """);
+                return;
+            }
+            filterChain.doFilter(request,response);
+
+
+
+        }
+    }
 }
+
+
 
 ```
